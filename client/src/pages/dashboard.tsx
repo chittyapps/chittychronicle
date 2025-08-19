@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import ModernLayout from "@/components/modern-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Download, Upload, AlertCircle, CheckCircle, Clock, FileText, 
   Link, Shield, Activity, TrendingUp, Users, Calendar, 
-  AlertTriangle, FileCheck, Send, Package
+  AlertTriangle, FileCheck, Send, Package, BarChart3
 } from "lucide-react";
 
 interface Contradiction {
@@ -175,24 +174,21 @@ export default function Dashboard() {
   const currentCaseDetails = cases.find((c: any) => c.id === selectedCase);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {currentCaseDetails && (
-        <Sidebar 
-          caseDetails={currentCaseDetails}
-          deadlines={deadlines?.deadlines?.map(d => d.entry) || []}
-          onCreateEntry={() => {
-            toast({
-              title: "Create Timeline Entry",
-              description: "Navigate to Timeline to create entries",
-            });
-          }}
-        />
-      )}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AppHeader currentCase={currentCaseDetails} />
-        
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Modern Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur">
+        <div className="container mx-auto flex h-16 items-center px-6">
+          <div className="flex items-center space-x-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-soft">
+              <BarChart3 className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-bold text-xl">ChittyChronicle</span>
+          </div>
+        </div>
+      </header>
+      
+      <main className="container mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex justify-between items-center">
               <div>
@@ -585,8 +581,7 @@ export default function Dashboard() {
               </TabsContent>
             </Tabs>
           </div>
-        </main>
-      </div>
+      </main>
     </div>
   );
 }

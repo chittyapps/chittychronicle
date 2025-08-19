@@ -11,6 +11,7 @@ import Timeline from "@/pages/timeline";
 import Timelines from "@/pages/timelines";
 import Automation from "@/pages/automation";
 import Dashboard from "@/pages/dashboard";
+import ChittyEcosystem from "@/pages/chitty-ecosystem";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/timelines" component={Timelines} />
       <Route path="/timeline/:caseId" component={Timeline} />
       <Route path="/automation/:caseId" component={Automation} />
+      <Route path="/ecosystem" component={ChittyEcosystem} />
       <Route component={NotFound} />
     </Switch>
   );

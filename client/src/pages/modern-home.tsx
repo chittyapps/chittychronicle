@@ -17,6 +17,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
+import { OnboardingWizard } from "@/components/onboarding-wizard";
 import type { Case } from "@shared/schema";
 
 const createCaseSchema = z.object({
@@ -38,6 +40,7 @@ function ModernHeader() {
     { href: "/", label: "Cases", active: location === "/" },
     { href: "/dashboard", label: "Dashboard", active: location === "/dashboard" },
     { href: "/timelines", label: "Timelines", active: location === "/timelines" },
+    { href: "/ecosystem", label: "Chitty Apps", active: location === "/ecosystem" },
   ];
 
   return (
@@ -102,11 +105,15 @@ function ModernHeader() {
 export default function ModernHome() {
   const { toast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const { data: cases, isLoading } = useQuery<Case[]>({
     queryKey: ["/api/cases"],
     retry: false,
   });
+
+  // Show onboarding if no cases exist
+  const shouldShowOnboarding = !showOnboarding && cases && cases.length === 0 && !showCreateModal;
 
   const form = useForm<CreateCaseData>({
     resolver: zodResolver(createCaseSchema),
@@ -160,7 +167,22 @@ export default function ModernHome() {
       <ModernHeader />
       
       <main className="container mx-auto px-6 py-8">
-        <div className="space-y-8 animate-fade-in">
+        {shouldShowOnboarding ? (
+          <OnboardingWizard 
+            onComplete={(caseData) => {
+              setShowOnboarding(false);
+              toast({
+                title: "Welcome to ChittyChronicle!",
+                description: "Your case has been created successfully.",
+              });
+            }}
+            onSkip={() => setShowOnboarding(false)}
+          />
+        ) : (
+          <div className="space-y-8 animate-fade-in">
+            {/* Upgrade Prompt */}
+            <UpgradePrompt context="dashboard" compact={true} />
+          
           {/* Header Section */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -168,7 +190,16 @@ export default function ModernHome() {
                 <h1 className="text-3xl font-bold tracking-tight">Legal Cases</h1>
                 <p className="text-gray-600 mt-1">Manage your legal cases and timelines</p>
               </div>
-              <Button
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowOnboarding(true)}
+                  className="shadow-soft"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Start Guided Setup
+                </Button>
+                <Button
                 onClick={() => setShowCreateModal(true)}
                 className="shadow-soft"
                 data-testid="create-case-button"
@@ -442,7 +473,8 @@ export default function ModernHome() {
               </Form>
             </DialogContent>
           </Dialog>
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );
