@@ -46,20 +46,23 @@ function ModernHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center px-6">
-        {/* Brand */}
-        <Link href="/" className="flex items-center space-x-3">
+        {/* Logo and Brand */}
+        <div className="flex items-center space-x-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-soft">
             <Clock className="h-5 w-5 text-white" />
           </div>
-          <span className="font-bold text-xl">ChittyChronicle</span>
-        </Link>
+          <div>
+            <h1 className="font-bold text-lg">ChittyChronicle</h1>
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Lite</Badge>
+          </div>
+        </div>
 
         {/* Navigation */}
-        <nav className="mx-8 hidden md:flex items-center space-x-1">
+        <nav className="hidden md:flex items-center space-x-1 ml-8">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
-              <Button
-                variant={item.active ? "default" : "ghost"}
+              <Button 
+                variant={item.active ? "default" : "ghost"} 
                 size="sm"
                 className={item.active ? "shadow-soft" : ""}
               >
@@ -70,14 +73,12 @@ function ModernHeader() {
         </nav>
 
         {/* Search */}
-        <div className="flex-1 max-w-md mx-4">
+        <div className="flex-1 max-w-md mx-8">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              type="search"
-              placeholder="Search cases..."
-              className="pl-10 border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-              data-testid="search-input"
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              placeholder="Search cases..." 
+              className="pl-10 bg-gray-50 border-0 focus:bg-white"
             />
           </div>
         </div>
@@ -182,297 +183,310 @@ export default function ModernHome() {
           <div className="space-y-8 animate-fade-in">
             {/* Upgrade Prompt */}
             <UpgradePrompt context="dashboard" compact={true} />
-          
-          {/* Header Section */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">Legal Cases</h1>
-                <p className="text-gray-600 mt-1">Manage your legal cases and timelines</p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowOnboarding(true)}
-                  className="shadow-soft"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Start Guided Setup
-                </Button>
-                <Button
-                onClick={() => setShowCreateModal(true)}
-                className="shadow-soft"
-                data-testid="create-case-button"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Case
-              </Button>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="shadow-soft border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-blue-50 rounded-xl">
-                      <Scale className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Active Cases</p>
-                      <p className="text-2xl font-bold">{cases?.length || 0}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-soft border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-green-50 rounded-xl">
-                      <TrendingUp className="h-6 w-6 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">This Month</p>
-                      <p className="text-2xl font-bold">8</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-soft border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-yellow-50 rounded-xl">
-                      <Clock className="h-6 w-6 text-yellow-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Pending</p>
-                      <p className="text-2xl font-bold">3</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-soft border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-red-50 rounded-xl">
-                      <AlertTriangle className="h-6 w-6 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Urgent</p>
-                      <p className="text-2xl font-bold">1</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Cases Grid */}
-          {!cases || cases.length === 0 ? (
-            <Card className="shadow-soft border-dashed border-2 border-gray-300">
-              <CardContent className="text-center py-20">
-                <div className="max-w-sm mx-auto">
-                  <Scale className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-                  <h3 className="text-xl font-semibold mb-3">No Cases Yet</h3>
-                  <p className="text-gray-600 mb-8">
-                    Create your first case to start managing legal timelines and evidence
-                  </p>
+            
+            {/* Header Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">Legal Cases</h1>
+                  <p className="text-gray-600 mt-1">Manage your legal cases and timelines</p>
+                </div>
+                <div className="flex items-center space-x-3">
                   <Button
-                    onClick={() => setShowCreateModal(true)}
-                    size="lg"
+                    variant="outline"
+                    onClick={() => setShowOnboarding(true)}
                     className="shadow-soft"
-                    data-testid="create-first-case-button"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Create Your First Case
+                    Start Guided Setup
+                  </Button>
+                  <Button
+                    onClick={() => setShowCreateModal(true)}
+                    className="shadow-soft"
+                    data-testid="create-case-button"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Case
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cases.map((caseItem) => (
-                <Link key={caseItem.id} href={`/timeline/${caseItem.id}`}>
-                  <Card className="shadow-soft hover:shadow-elevated transition-all duration-200 cursor-pointer border-0 group">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="text-xs">
-                          {caseItem.caseNumber}
-                        </Badge>
-                        <div className="text-xs text-gray-500">
-                          {caseItem.createdAt ? new Date(caseItem.createdAt).toLocaleDateString() : ''}
-                        </div>
+              </div>
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="shadow-soft border-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-blue-50 rounded-xl">
+                        <Scale className="h-6 w-6 text-blue-600" />
                       </div>
-                    </CardHeader>
-                    
-                    <CardContent className="pt-0">
-                      <h3 className="font-semibold text-lg mb-4 group-hover:text-blue-600 transition-colors">
-                        {caseItem.caseName}
-                      </h3>
-                      
-                      <div className="space-y-3 text-sm">
-                        {caseItem.jurisdiction && (
-                          <div className="flex items-center text-gray-600">
-                            <Scale className="w-4 h-4 mr-2 text-gray-400" />
-                            {caseItem.jurisdiction}
-                          </div>
-                        )}
-                        
-                        {caseItem.trialDate && (
-                          <div className="flex items-center text-gray-600">
-                            <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                            Trial: {new Date(caseItem.trialDate).toLocaleDateString()}
-                          </div>
-                        )}
-                        
-                        {caseItem.discoveryDeadline && (
-                          <div className="flex items-center text-amber-600">
-                            <AlertTriangle className="w-4 h-4 mr-2" />
-                            Discovery: {new Date(caseItem.discoveryDeadline).toLocaleDateString()}
-                          </div>
-                        )}
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Active Cases</p>
+                        <p className="text-2xl font-bold">{cases?.length || 0}</p>
                       </div>
-                      
-                      <div className="mt-6 pt-4 border-t border-gray-100">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center space-x-4 text-xs text-gray-500">
-                            <div className="flex items-center">
-                              <FileText className="w-3 h-3 mr-1" />
-                              5 entries
-                            </div>
-                            <div className="flex items-center">
-                              <Activity className="w-3 h-3 mr-1" />
-                              2d ago
-                            </div>
-                          </div>
-                        </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="shadow-soft border-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-green-50 rounded-xl">
+                        <TrendingUp className="h-6 w-6 text-green-600" />
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">This Month</p>
+                        <p className="text-2xl font-bold">8</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="shadow-soft border-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-yellow-50 rounded-xl">
+                        <AlertTriangle className="h-6 w-6 text-yellow-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Deadlines</p>
+                        <p className="text-2xl font-bold">3</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="shadow-soft border-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-purple-50 rounded-xl">
+                        <Activity className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Entries</p>
+                        <p className="text-2xl font-bold">24</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-          )}
 
-          {/* Create Modal */}
-          <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Case</DialogTitle>
-              </DialogHeader>
-              
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit((data) => createCaseMutation.mutate(data))} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="caseName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Case Name *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Johnson v. Smith Corp" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="caseNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Case Number *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="2024-CV-001234" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+            {/* Cases List */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Recent Cases</h2>
+                <Button variant="outline" size="sm">
+                  View All
+                </Button>
+              </div>
 
-                  <FormField
-                    control={form.control}
-                    name="jurisdiction"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Jurisdiction</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Superior Court of California" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="filingDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Filing Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="trialDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Trial Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="discoveryDeadline"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Discovery Deadline</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-3 pt-6">
+              {!cases || cases.length === 0 ? (
+                <Card className="shadow-soft border-dashed border-2 border-gray-300">
+                  <CardContent className="text-center py-20">
+                    <Scale className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+                    <h3 className="text-xl font-semibold mb-3">No Cases Yet</h3>
+                    <p className="text-gray-600 mb-8">
+                      Create your first case to start building timelines and managing evidence
+                    </p>
                     <Button
-                      type="button"
+                      onClick={() => setShowOnboarding(true)}
+                      size="lg"
+                      className="shadow-soft mr-3"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Start Guided Setup
+                    </Button>
+                    <Button
+                      onClick={() => setShowCreateModal(true)}
                       variant="outline"
-                      onClick={() => setShowCreateModal(false)}
+                      size="lg"
                     >
-                      Cancel
+                      Create Case Manually
                     </Button>
-                    <Button
-                      type="submit"
-                      disabled={createCaseMutation.isPending}
-                      className="shadow-soft"
-                    >
-                      {createCaseMutation.isPending ? "Creating..." : "Create Case"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {cases.map((caseItem: Case) => (
+                    <Link key={caseItem.id} href={`/timeline/${caseItem.id}`}>
+                      <Card className="shadow-soft hover:shadow-elevated transition-all duration-200 cursor-pointer border-0">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="p-2 bg-blue-50 rounded-lg">
+                                <Scale className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-lg">{caseItem.caseName}</h3>
+                                <p className="text-sm text-gray-600">{caseItem.caseNumber}</p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="bg-green-100 text-green-700">
+                              Active
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-2 text-sm text-gray-600">
+                            {caseItem.jurisdiction && (
+                              <div className="flex items-center">
+                                <span className="w-20 font-medium">Court:</span>
+                                <span>{caseItem.jurisdiction}</span>
+                              </div>
+                            )}
+                            {caseItem.filingDate && (
+                              <div className="flex items-center">
+                                <span className="w-20 font-medium">Filed:</span>
+                                <span>{new Date(caseItem.filingDate).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                            {caseItem.trialDate && (
+                              <div className="flex items-center">
+                                <span className="w-20 font-medium">Trial:</span>
+                                <span>{new Date(caseItem.trialDate).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <div className="flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                <span>Updated recently</span>
+                              </div>
+                              <div className="flex items-center">
+                                <FileText className="h-3 w-3 mr-1" />
+                                <span>5 entries</span>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              View Timeline →
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Create Case Modal */}
+            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create New Case</DialogTitle>
+                </DialogHeader>
+                
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit((data) => createCaseMutation.mutate(data))} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="caseName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Case Name *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Smith v. Jones" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="caseNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Case Number *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="2024-CV-001" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="jurisdiction"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Jurisdiction</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Superior Court of California" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="filingDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Filing Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="trialDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Trial Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="discoveryDeadline"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Discovery Deadline</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="flex justify-end space-x-3 pt-6">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowCreateModal(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createCaseMutation.isPending}
+                        className="shadow-soft"
+                      >
+                        {createCaseMutation.isPending ? "Creating..." : "Create Case"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
       </main>
