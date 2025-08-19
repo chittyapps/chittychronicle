@@ -1,6 +1,4 @@
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Clock, ChevronDown } from "lucide-react";
+import { Clock } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { Case } from "@shared/schema";
 
@@ -9,20 +7,7 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ currentCase }: AppHeaderProps) {
-  const { user } = useAuth();
   const [location] = useLocation();
-
-  const getInitials = (firstName?: string, lastName?: string) => {
-    if (!firstName && !lastName) return "U";
-    const first = firstName?.[0] || "";
-    const last = lastName?.[0] || "";
-    return (first + last).toUpperCase();
-  };
-
-  const getDisplayName = (firstName?: string, lastName?: string) => {
-    if (!firstName && !lastName) return "User";
-    return [firstName, lastName].filter(Boolean).join(" ");
-  };
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
@@ -56,12 +41,15 @@ export default function AppHeader({ currentCase }: AppHeaderProps) {
                       Timeline
                     </a>
                   </Link>
-                  <a href="#" className="text-muted hover:text-gray-900 px-1 pb-1 text-sm font-medium">
-                    Documents
-                  </a>
-                  <a href="#" className="text-muted hover:text-gray-900 px-1 pb-1 text-sm font-medium">
-                    Reports
-                  </a>
+                  <Link href={`/automation/${currentCase.id}`}>
+                    <a className={`px-1 pb-1 text-sm font-medium ${
+                      location.startsWith("/automation") 
+                        ? "text-primary border-b-2 border-primary" 
+                        : "text-muted hover:text-gray-900"
+                    }`}>
+                      Automation
+                    </a>
+                  </Link>
                 </>
               )}
             </nav>
@@ -73,23 +61,14 @@ export default function AppHeader({ currentCase }: AppHeaderProps) {
               </div>
             )}
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-600" data-testid="user-initials">
-                  {getInitials(user?.firstName, user?.lastName)}
-                </span>
+              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium">
+                CC
               </div>
-              <span className="text-sm font-medium text-gray-900" data-testid="user-name">
-                {getDisplayName(user?.firstName, user?.lastName)}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.location.href = '/api/logout'}
-                className="text-muted hover:text-gray-900"
-                data-testid="user-menu-button"
-              >
-                <ChevronDown className="w-4 h-4" />
-              </Button>
+              <div className="hidden md:block">
+                <div className="text-sm font-medium text-gray-900" data-testid="user-name">
+                  ChittyChronicle User
+                </div>
+              </div>
             </div>
           </div>
         </div>

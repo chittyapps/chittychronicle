@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+// No authentication required
 import { z } from "zod";
 import { 
   insertCaseSchema, 
@@ -14,20 +14,7 @@ import { ingestionService } from "./ingestionService";
 import { mcpService } from "./mcpService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // No authentication middleware needed
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
@@ -39,10 +26,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cases
-  app.get('/api/cases', isAuthenticated, async (req: any, res) => {
+  app.get('/api/cases', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const cases = await storage.getCases(userId);
+      const cases = await storage.getCases('demo-user');
       res.json(cases);
     } catch (error) {
       console.error("Error fetching cases:", error);
@@ -50,12 +36,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/cases', isAuthenticated, async (req: any, res) => {
+  app.post('/api/cases', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
       const caseData = insertCaseSchema.parse({
         ...req.body,
-        createdBy: userId,
+        createdBy: 'demo-user',
       });
       
       const newCase = await storage.createCase(caseData);
@@ -69,10 +54,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/cases/:id', isAuthenticated, async (req: any, res) => {
+  app.get('/api/cases/:id', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const caseItem = await storage.getCase(req.params.id, userId);
+      const caseItem = await storage.getCase(req.params.id, 'demo-user');
       if (!caseItem) {
         return res.status(404).json({ message: "Case not found" });
       }
@@ -84,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Timeline entries
-  app.get('/api/timeline/entries', isAuthenticated, async (req: any, res) => {
+  app.get('/api/timeline/entries', async (req: any, res) => {
     try {
       const { caseId, startDate, endDate, entryType, confidenceLevel, limit, offset } = req.query;
 
@@ -109,13 +93,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/timeline/entries', isAuthenticated, async (req: any, res) => {
+  app.post('/api/timeline/entries', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
       const entryData = insertTimelineEntrySchema.parse({
         ...req.body,
-        createdBy: userId,
-        modifiedBy: userId,
+        createdBy: 'demo-user',
+        modifiedBy: 'demo-user',
       });
       
       const entry = await storage.createTimelineEntry(entryData);
@@ -129,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/timeline/entries/:id', isAuthenticated, async (req: any, res) => {
+  app.get('/api/timeline/entries/:id', async (req: any, res) => {
     try {
       const { caseId } = req.query;
       const entry = await storage.getTimelineEntry(req.params.id, caseId as string);
@@ -143,9 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/timeline/entries/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/timeline/entries/:id', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user';
       const entryData = insertTimelineEntrySchema.partial().parse(req.body);
       
       const updatedEntry = await storage.updateTimelineEntry(req.params.id, entryData, userId);
@@ -162,9 +145,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/timeline/entries/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/timeline/entries/:id', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user';
       const success = await storage.deleteTimelineEntry(req.params.id, userId);
       if (!success) {
         return res.status(404).json({ message: "Timeline entry not found" });
@@ -177,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Timeline sources
-  app.get('/api/timeline/entries/:entryId/sources', isAuthenticated, async (req: any, res) => {
+  app.get('/api/timeline/entries/:entryId/sources', async (req: any, res) => {
     try {
       const sources = await storage.getTimelineSources(req.params.entryId);
       res.json(sources);
@@ -187,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/timeline/entries/:entryId/sources', isAuthenticated, async (req: any, res) => {
+  app.post('/api/timeline/entries/:entryId/sources', async (req: any, res) => {
     try {
       const sourceData = insertTimelineSourceSchema.parse({
         ...req.body,
@@ -206,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Search
-  app.get('/api/timeline/search', isAuthenticated, async (req: any, res) => {
+  app.get('/api/timeline/search', async (req: any, res) => {
     try {
       const { caseId, query } = req.query;
       
@@ -223,9 +206,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Data ingestion routes
-  app.post('/api/ingestion/jobs', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ingestion/jobs', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user';
       const jobData = insertDataIngestionJobSchema.parse({
         ...req.body,
         createdBy: userId,
@@ -242,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/ingestion/jobs/:caseId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/ingestion/jobs/:caseId', async (req: any, res) => {
     try {
       const jobs = await storage.getDataIngestionJobs(req.params.caseId);
       res.json({ jobs });
@@ -252,9 +235,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/ingestion/process', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ingestion/process', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user';
       const { caseId, documents } = req.body;
       
       if (!caseId || !documents || !Array.isArray(documents)) {
@@ -292,9 +275,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // MCP Integration routes
-  app.post('/api/mcp/integrations', isAuthenticated, async (req: any, res) => {
+  app.post('/api/mcp/integrations', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user';
       const integrationData = insertMcpIntegrationSchema.parse({
         ...req.body,
         createdBy: userId,
@@ -311,9 +294,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/mcp/integrations', isAuthenticated, async (req: any, res) => {
+  app.get('/api/mcp/integrations', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user';
       const integrations = await mcpService.getActiveIntegrations(userId);
       res.json({ integrations });
     } catch (error) {
@@ -335,9 +318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/mcp/:integrationId/:action', isAuthenticated, async (req: any, res) => {
+  app.post('/api/mcp/:integrationId/:action', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user';
       const { integrationId, action } = req.params;
       
       const result = await mcpService.processMcpRequest(integrationId, action, req.body, userId);
@@ -353,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/mcp/sync/:integrationId/:caseId', isAuthenticated, async (req: any, res) => {
+  app.post('/api/mcp/sync/:integrationId/:caseId', async (req: any, res) => {
     try {
       const { integrationId, caseId } = req.params;
       
@@ -371,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Contradiction detection endpoint
-  app.post('/api/timeline/detect-contradictions/:caseId', isAuthenticated, async (req: any, res) => {
+  app.post('/api/timeline/detect-contradictions/:caseId', async (req: any, res) => {
     try {
       const contradictions = await ingestionService.detectContradictions(req.params.caseId);
       res.json({ contradictions });
