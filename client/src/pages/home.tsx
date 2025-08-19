@@ -115,21 +115,7 @@ export default function Home() {
     <div className="min-h-screen bg-bg-light">
       <AppHeader />
       
-      {/* Quick Actions Bar */}
-      <div className="bg-white border-b px-6 py-3">
-        <div className="max-w-7xl mx-auto flex gap-3">
-          <Link href="/dashboard">
-            <Button variant="outline" size="sm">
-              <Bot className="w-4 h-4 mr-2" />
-              ChittyChronicle Dashboard
-            </Button>
-          </Link>
-          <Button variant="outline" size="sm">
-            <Shield className="w-4 h-4 mr-2" />
-            ChittyChain Verify
-          </Button>
-        </div>
-      </div>
+
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
