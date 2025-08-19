@@ -16,7 +16,7 @@ import { Plus, Calendar, Scale, FileText, Clock, AlertTriangle, Bot } from "luci
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Shield } from "lucide-react";
 import type { Case } from "@shared/schema";
 
@@ -36,24 +36,12 @@ export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
+  // Authentication is disabled for development - skip auth checks
 
   const { data: cases, isLoading: casesLoading } = useQuery<Case[]>({
     queryKey: ["/api/cases"],
     retry: false,
+    throwOnError: false,
   });
 
   const form = useForm<CreateCaseData>({
@@ -188,7 +176,7 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cases.map((caseItem) => (
-              <Link key={caseItem.id} href={`/timeline/${caseItem.id}`}>
+              <div key={caseItem.id} onClick={() => window.location.href = `/timeline/${caseItem.id}`}>
                 <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer border border-gray-200">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -244,32 +232,30 @@ export default function Home() {
                     </div>
                     
                     <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-                      <Link href={`/timeline/${caseItem.id}`}>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full"
-                          data-testid={`view-timeline-${caseItem.id}`}
-                        >
-                          <FileText className="w-4 h-4 mr-2" />
-                          View Timeline
-                        </Button>
-                      </Link>
-                      <Link href={`/automation/${caseItem.id}`}>
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          className="w-full"
-                          data-testid={`automation-${caseItem.id}`}
-                        >
-                          <Bot className="w-4 h-4 mr-2" />
-                          AI Automation
-                        </Button>
-                      </Link>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => window.location.href = `/timeline/${caseItem.id}`}
+                        data-testid={`view-timeline-${caseItem.id}`}
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Timeline
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => window.location.href = `/automation/${caseItem.id}`}
+                        data-testid={`automation-${caseItem.id}`}
+                      >
+                        <Bot className="w-4 h-4 mr-2" />
+                        AI Automation
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+              </div>
             ))}
           </div>
         )}
