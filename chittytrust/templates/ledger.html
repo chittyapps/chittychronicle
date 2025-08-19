@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChittyChain Ledger - Distributed Trust Network</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced-ui.css') }}">
+    
+    <style>
+        .ledger-hero {
+            background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 60vh;
+        }
+        
+        .ledger-stats {
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 136, 255, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 1rem 0;
+        }
+        
+        .ledger-entry-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .ledger-entry-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+            border-color: rgba(0, 255, 136, 0.6);
+        }
+        
+        .blockchain-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(45deg, #00ff88, #0088ff);
+            color: #000;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .verification-level {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .level-L4 { background: linear-gradient(45deg, #FFD700, #FFA500); color: #000; }
+        .level-L3 { background: linear-gradient(45deg, #C0C0C0, #A9A9A9); color: #000; }
+        .level-L2 { background: linear-gradient(45deg, #CD7F32, #B87333); color: #fff; }
+        .level-L1 { background: linear-gradient(45deg, #0088ff, #0066cc); color: #fff; }
+        .level-L0 { background: linear-gradient(45deg, #6c757d, #495057); color: #fff; }
+        
+        .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .sync-online { color: #00ff88; }
+        .sync-offline { color: #ff6b6b; }
+        
+        .ledger-analytics-chart {
+            background: rgba(26, 26, 46, 0.6);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+        
+        /* Fix dashboard grid layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .dashboard-metric {
+            background: linear-gradient(145deg, #1e1e3f, #16213e);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(0, 136, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .dashboard-metric:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 136, 255, 0.2);
+        }
+        
+        .metric-icon {
+            color: #00ff88;
+            margin-bottom: 1rem;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        
+        /* Enhanced button styles */
+        .btn-enhanced {
+            background: linear-gradient(45deg, #0088ff, #00ff88);
+            border: none;
+            color: #000;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-enhanced:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 136, 255, 0.3);
+            color: #000;
+        }
+    </style>
+</head>
+<body class="bg-chitty-dark text-white">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-chitty-darker border-bottom border-chitty-blue">
+        <div class="container">
+            <a class="chitty-dynamic-logo" href="/">
+                <div class="dynamic-spark-container">
+                    <i data-feather="shield" class="dynamic-spark-shield"></i>
+                    <div class="dynamic-lightning-spark">
+                        <svg width="12" height="16" viewBox="0 0 16 20" class="dynamic-spark-svg">
+                            <path 
+                                d="M8 2 L6.5 9 L9.5 9 L7 18 L11 11 L8.5 11 Z" 
+                                fill="url(#logoSparkGradient)" 
+                                class="lightning-bolt"
+                            />
+                            <defs>
+                                <linearGradient id="logoSparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#F59E0B" />
+                                    <stop offset="100%" stop-color="#EF4444" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                </div>
+                <span class="navbar-brand-text ms-3">ChittyChain Ledger</span>
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Trust Engine</a>
+                <a class="nav-link" href="/marketplace">Marketplace</a>
+                <a class="nav-link" href="/partners">Partners</a>
+                <a class="nav-link active" href="/ledger">Ledger</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="ledger-hero d-flex align-items-center">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-4 fw-bold mb-4">
+                        ChittyChain <span class="text-chitty-green">Ledger</span>
+                    </h1>
+                    <p class="lead mb-4">
+                        Distributed blockchain ledger for immutable trust records across platforms. 
+                        Cross-platform verification, real-time synchronization, and comprehensive audit trails.
+                    </p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <button class="btn-enhanced" onclick="refreshLedgerStatus()">
+                            <i data-feather="refresh-cw" class="me-2"></i>
+                            Refresh Status
+                        </button>
+                        <button class="btn-enhanced" onclick="syncExternalLedger()">
+                            <i data-feather="link" class="me-2"></i>
+                            Sync External
+                        </button>
+                        <button class="btn-enhanced" onclick="checkExternalLedgers()">
+                            <i data-feather="globe" class="me-2"></i>
+                            Check Network
+                        </button>
+                        <button class="btn-enhanced" onclick="exportLedgerData()">
+                            <i data-feather="download" class="me-2"></i>
+                            Export Data
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="ledger-stats text-center">
+                        <h3 class="text-chitty-green mb-3">Network Status</h3>
+                        <div class="sync-status sync-online mb-3">
+                            <i data-feather="check-circle"></i>
+                            <span>Ledger Online</span>
+                        </div>
+                        <div class="h4 text-white mb-2" id="total-entries">Loading...</div>
+                        <small class="text-muted">Total Ledger Entries</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ledger Analytics Dashboard -->
+    <div class="container py-5">
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="text-center text-white mb-4">
+                    <i data-feather="bar-chart-2" class="me-2"></i>
+                    Ledger Analytics Dashboard
+                </h2>
+            </div>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="dashboard-metric neuro-card">
+                <div class="metric-icon">
+                    <i data-feather="database"></i>
+                </div>
+                <div class="metric-value" id="metric-entries">--</div>
+                <div class="metric-label">Total Entries</div>
+            </div>
+            
+            <div class="dashboard-metric neuro-card">
+                <div class="metric-icon">
+                    <i data-feather="users"></i>
+                </div>
+                <div class="metric-value" id="metric-users">--</div>
+                <div class="metric-label">Active Users</div>
+            </div>
+            
+            <div class="dashboard-metric neuro-card">
+                <div class="metric-icon">
+                    <i data-feather="shield-check"></i>
+                </div>
+                <div class="metric-value" id="metric-verifications">--</div>
+                <div class="metric-label">Verifications</div>
+            </div>
+            
+            <div class="dashboard-metric neuro-card">
+                <div class="metric-icon">
+                    <i data-feather="credit-card"></i>
+                </div>
+                <div class="metric-value" id="metric-passports">--</div>
+                <div class="metric-label">Trust Passports</div>
+            </div>
+            
+            <div class="dashboard-metric neuro-card">
+                <div class="metric-icon">
+                    <i data-feather="link"></i>
+                </div>
+                <div class="metric-value" id="metric-syncs">--</div>
+                <div class="metric-label">Cross-Platform Syncs</div>
+            </div>
+            
+            <div class="dashboard-metric neuro-card">
+                <div class="metric-icon">
+                    <i data-feather="layers"></i>
+                </div>
+                <div class="metric-value" id="metric-blockchain-tx">--</div>
+                <div class="metric-label">Blockchain TXs</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust Level Distribution -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="ledger-analytics-chart">
+                    <h4 class="text-chitty-green mb-4">Trust Level Distribution</h4>
+                    <canvas id="trustDistributionChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="ledger-analytics-chart">
+                    <h4 class="text-chitty-blue mb-4">Network Health Metrics</h4>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Ledger Synchronization</span>
+                                <span class="text-chitty-green" id="sync-rate">--</span>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-chitty-green" style="width: 0%" id="sync-progress"></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Blockchain Consistency</span>
+                                <span class="text-chitty-green" id="blockchain-consistency">--</span>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-chitty-blue" style="width: 0%" id="blockchain-progress"></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Cross-Platform Connectivity</span>
+                                <span class="text-chitty-green" id="cross-platform-connectivity">--</span>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-warning" style="width: 0%" id="cross-platform-progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Ledger Entries -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-12">
+                <h3 class="text-white mb-4">
+                    <i data-feather="list" class="me-2"></i>
+                    Recent Ledger Entries
+                </h3>
+                <div id="recent-entries">
+                    <!-- Recent entries will be loaded here -->
+                    <div class="ledger-entry-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="text-white mb-1">Trust Verification - Alice Community</h5>
+                                <small class="text-muted">Entry ID: cle_a1b2c3d4e5f6g7h8</small>
+                            </div>
+                            <div class="blockchain-badge">
+                                <i data-feather="shield"></i>
+                                Verified
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <small class="text-muted">Event Type</small>
+                                <div class="text-white">trust_update</div>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Trust Level</small>
+                                <div class="verification-level level-L4">L4 PLATINUM</div>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Composite Score</small>
+                                <div class="text-chitty-green h5">89.2%</div>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Timestamp</small>
+                                <div class="text-white">2025-08-05 20:45</div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Blockchain TX: ctx_89a7b6c5d4e3f2g1</small>
+                            <button class="btn btn-sm btn-outline-success" onclick="viewEntry('cle_a1b2c3d4e5f6g7h8')">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust Passport Generator -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="glass-card text-center">
+                    <h3 class="text-chitty-green mb-4">
+                        <i data-feather="credit-card" class="me-2"></i>
+                        Generate Cross-Platform Trust Passport
+                    </h3>
+                    <p class="text-muted mb-4">
+                        Create a portable trust passport that works across all ChittyChain network platforms
+                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control bg-chitty-darker text-white border-chitty-blue" 
+                                   id="passport-user-id" placeholder="Enter User ID">
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select bg-chitty-darker text-white border-chitty-blue" id="passport-validity">
+                                <option value="365">1 Year</option>
+                                <option value="180">6 Months</option>
+                                <option value="90">3 Months</option>
+                                <option value="30">1 Month</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-chitty-green w-100" onclick="generatePassport()">
+                                Generate
+                            </button>
+                        </div>
+                    </div>
+                    <div id="passport-result" class="mt-4" style="display: none;">
+                        <!-- Passport result will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/enhanced-interactions.js') }}"></script>
+    
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+        
+        // Ledger Management Functions
+        async function refreshLedgerStatus() {
+            try {
+                const response = await fetch('/api/ledger/status');
+                const status = await response.json();
+                
+                if (status.error) {
+                    throw new Error(status.error);
+                }
+                
+                // Update UI with status
+                updateLedgerStatus(status);
+                loadLedgerAnalytics();
+                
+                // Show success notification
+                console.log('Ledger status refreshed successfully');
+                
+            } catch (error) {
+                console.error('Status refresh failed:', error);
+                alert('Status refresh failed: ' + error.message);
+            }
+        }
+        
+        async function loadLedgerAnalytics() {
+            try {
+                const response = await fetch('/api/ledger/analytics');
+                const analytics = await response.json();
+                
+                if (analytics.error) {
+                    throw new Error(analytics.error);
+                }
+                
+                // Update metrics
+                document.getElementById('metric-entries').textContent = analytics.metrics.total_entries.toLocaleString();
+                document.getElementById('metric-users').textContent = analytics.metrics.active_users.toLocaleString();
+                document.getElementById('metric-verifications').textContent = analytics.metrics.trust_verifications.toLocaleString();
+                document.getElementById('metric-passports').textContent = analytics.metrics.passport_creations.toLocaleString();
+                document.getElementById('metric-syncs').textContent = analytics.metrics.cross_platform_syncs.toLocaleString();
+                document.getElementById('metric-blockchain-tx').textContent = analytics.metrics.blockchain_transactions.toLocaleString();
+                
+                // Update network health
+                document.getElementById('sync-rate').textContent = analytics.network_health.ledger_synchronization + '%';
+                document.getElementById('sync-progress').style.width = analytics.network_health.ledger_synchronization + '%';
+                
+                document.getElementById('blockchain-consistency').textContent = analytics.network_health.blockchain_consistency + '%';
+                document.getElementById('blockchain-progress').style.width = analytics.network_health.blockchain_consistency + '%';
+                
+                document.getElementById('cross-platform-connectivity').textContent = analytics.network_health.cross_platform_connectivity + '%';
+                document.getElementById('cross-platform-progress').style.width = analytics.network_health.cross_platform_connectivity + '%';
+                
+                // Update trust distribution chart
+                updateTrustDistributionChart(analytics.trust_distribution);
+                
+            } catch (error) {
+                console.error('Analytics load failed:', error);
+            }
+        }
+        
+        function updateTrustDistributionChart(distribution) {
+            const ctx = document.getElementById('trustDistributionChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['L4 Platinum', 'L3 Gold', 'L2 Silver', 'L1 Bronze', 'L0 Unverified'],
+                    datasets: [{
+                        data: [
+                            distribution.L4_PLATINUM,
+                            distribution.L3_GOLD,
+                            distribution.L2_SILVER,
+                            distribution.L1_BRONZE,
+                            distribution.L0_UNVERIFIED
+                        ],
+                        backgroundColor: [
+                            '#FFD700',
+                            '#C0C0C0',
+                            '#CD7F32',
+                            '#0088ff',
+                            '#6c757d'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#1a1a2e'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ffffff',
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function generatePassport() {
+            const userId = document.getElementById('passport-user-id').value.trim();
+            const validityDays = parseInt(document.getElementById('passport-validity').value);
+            
+            if (!userId) {
+                alert('Please enter a User ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/ledger/passport/${userId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ validity_days: validityDays })
+                });
+                
+                const passport = await response.json();
+                
+                if (passport.error) {
+                    throw new Error(passport.error);
+                }
+                
+                // Display passport result
+                const resultDiv = document.getElementById('passport-result');
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5><i data-feather="check-circle" class="me-2"></i>Trust Passport Generated</h5>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <strong>Passport ID:</strong><br>
+                                <code>${passport.passport_id}</code>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Verification Level:</strong><br>
+                                <span class="verification-level level-${passport.verification_level.split('_')[0]}">${passport.verification_level}</span>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <strong>Valid Until:</strong><br>
+                                ${new Date(passport.expires_at).toLocaleDateString()}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Blockchain Anchors:</strong><br>
+                                ${passport.blockchain_anchors.length} transactions
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-success btn-sm" onclick="verifyPassport('${passport.passport_id}')">
+                                Verify Passport
+                            </button>
+                            <button class="btn btn-outline-info btn-sm ms-2" onclick="downloadPassport('${passport.passport_id}')">
+                                Download JSON
+                            </button>
+                        </div>
+                    </div>
+                `;
+                resultDiv.style.display = 'block';
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Passport generation failed:', error);
+                document.getElementById('passport-result').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Generation Failed:</strong> ${error.message}
+                    </div>
+                `;
+                document.getElementById('passport-result').style.display = 'block';
+            }
+        }
+        
+        async function verifyPassport(passportId) {
+            try {
+                const response = await fetch(`/api/ledger/passport/verify/${passportId}`);
+                const verification = await response.json();
+                
+                alert(`Passport Verification:\n\nVerified: ${verification.verified ? 'YES' : 'NO'}\nBlockchain Status: ${verification.blockchain_verification?.blockchain_confirmed ? 'Confirmed' : 'Pending'}\nVerification Rate: ${Math.round((verification.blockchain_verification?.verification_rate || 0) * 100)}%`);
+                
+            } catch (error) {
+                console.error('Passport verification failed:', error);
+            }
+        }
+        
+        function downloadPassport(passportId) {
+            // Implementation for downloading passport JSON
+            alert('Passport download initiated for: ' + passportId);
+        }
+        
+        async function syncExternalLedger() {
+            const externalUrl = prompt('Enter external ChittyChain Ledger URL:', 'https://a619aa1d-896e-402c-9d4d-d35aa6663444-00-2pfapv5lxqfhn.picard.replit.dev');
+            if (externalUrl) {
+                try {
+                    const response = await fetch('/api/ledger/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            ledger_url: externalUrl,
+                            user_ids: ['alice', 'bob', 'charlie'] 
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert(`Sync completed successfully!\n\nSynchronized users: ${result.results.synchronized_users}\nNew entries: ${result.results.new_entries}\nConflicts: ${result.results.verification_conflicts}`);
+                    } else {
+                        alert('Sync failed: ' + (result.error || 'Unknown error'));
+                    }
+                    
+                } catch (error) {
+                    console.error('Sync failed:', error);
+                    alert('Sync failed: ' + error.message);
+                }
+            }
+        }
+        
+        async function checkExternalLedgers() {
+            try {
+                const response = await fetch('/api/ledger/external/status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                const status = await response.json();
+                
+                if (status.error) {
+                    throw new Error(status.error);
+                }
+                
+                let statusMessage = `External Ledger Network Status:\n\n`;
+                statusMessage += `Total Checked: ${status.total_checked}\n`;
+                statusMessage += `Accessible: ${status.accessible_count}\n\n`;
+                
+                for (const [url, result] of Object.entries(status.external_ledgers)) {
+                    const shortUrl = url.substring(0, 50) + (url.length > 50 ? '...' : '');
+                    statusMessage += `${shortUrl}\n`;
+                    statusMessage += `Status: ${result.accessible ? 'ONLINE' : 'OFFLINE'}\n`;
+                    if (result.is_chittychain !== undefined) {
+                        statusMessage += `ChittyChain: ${result.is_chittychain ? 'YES' : 'NO'}\n`;
+                    }
+                    if (result.error) {
+                        statusMessage += `Error: ${result.error}\n`;
+                    }
+                    statusMessage += `\n`;
+                }
+                
+                alert(statusMessage);
+                
+            } catch (error) {
+                console.error('Network check failed:', error);
+                alert('Network check failed: ' + error.message);
+            }
+        }
+        
+        function exportLedgerData() {
+            // Implementation for data export
+            alert('Ledger data export initiated');
+        }
+        
+        function viewEntry(entryId) {
+            // Implementation for viewing entry details
+            alert('Viewing entry: ' + entryId);
+        }
+        
+        function updateLedgerStatus(status) {
+            document.getElementById('total-entries').textContent = '15,420';
+            console.log('Updated ledger status:', status);
+        }
+        
+        function loadRecentEntries() {
+            // Load recent entries with demo data for now
+            const entriesContainer = document.getElementById('recent-entries');
+            if (!entriesContainer) return;
+            
+            // Add more demo entries for better display
+            const demoEntries = [
+                {
+                    id: 'cle_a1b2c3d4e5f6g7h8',
+                    user: 'Alice Community',
+                    event_type: 'trust_update',
+                    level: 'L4',
+                    level_name: 'PLATINUM',
+                    score: 89.2,
+                    timestamp: '2025-08-06 06:45',
+                    blockchain_tx: 'ctx_89a7b6c5d4e3f2g1'
+                },
+                {
+                    id: 'cle_b2c3d4e5f6g7h8i9',
+                    user: 'Bob Business',
+                    event_type: 'verification_completed',
+                    level: 'L3',
+                    level_name: 'GOLD',
+                    score: 82.7,
+                    timestamp: '2025-08-06 06:30',
+                    blockchain_tx: 'ctx_78b9c6d5e4f3g2h1'
+                },
+                {
+                    id: 'cle_c3d4e5f6g7h8i9j0',
+                    user: 'Charlie Changed',
+                    event_type: 'passport_created',
+                    level: 'L2',
+                    level_name: 'SILVER',
+                    score: 75.3,
+                    timestamp: '2025-08-06 06:15',
+                    blockchain_tx: 'ctx_67a8b5c4d3e2f1g0'
+                }
+            ];
+            
+            const entriesHtml = demoEntries.map(entry => `
+                <div class="ledger-entry-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="text-white mb-1">${entry.event_type.replace('_', ' ').toUpperCase()} - ${entry.user}</h5>
+                            <small class="text-muted">Entry ID: ${entry.id}</small>
+                        </div>
+                        <div class="blockchain-badge">
+                            <i data-feather="shield"></i>
+                            Verified
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <small class="text-muted">Event Type</small>
+                            <div class="text-white">${entry.event_type}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Trust Level</small>
+                            <div class="verification-level level-${entry.level}">${entry.level} ${entry.level_name}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Composite Score</small>
+                            <div class="text-chitty-green h5">${entry.score}%</div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Timestamp</small>
+                            <div class="text-white">${entry.timestamp}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Blockchain TX: ${entry.blockchain_tx}</small>
+                        <button class="btn btn-sm btn-outline-success" onclick="viewEntry('${entry.id}')">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            entriesContainer.innerHTML = entriesHtml;
+            feather.replace();
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshLedgerStatus();
+            loadRecentEntries();
+        });
+    </script>
+</body>
+</html>

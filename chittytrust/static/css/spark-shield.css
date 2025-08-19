@@ -1,0 +1,300 @@
+/* ChittyTrust Shield-Spark Design System */
+
+/* Clean Dynamic Spark Element */
+.spark {
+    position: relative;
+    display: inline-block;
+    width: 14px;
+    height: 16px;
+}
+
+.spark svg {
+    width: 100%;
+    height: 100%;
+    animation: sparkPulse 3s ease-in-out infinite;
+    z-index: 2;
+    filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4));
+}
+
+/* Shield + Spark Combinations */
+.shield-spark {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Spark over shield (top-right) */
+.shield-spark.spark-over .spark::before {
+    top: -6px;
+    right: -8px;
+    transform: rotate(15deg);
+}
+
+/* Spark inside shield (center) */
+.shield-spark.spark-inside {
+    position: relative;
+}
+
+.shield-spark.spark-inside .spark::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 12px;
+    z-index: 1;
+}
+
+/* Spark emanating (multiple sparks) */
+.shield-spark.spark-emanating::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 8px;
+    background: linear-gradient(135deg, #00ff88 0%, #00ccdd 100%);
+    clip-path: polygon(50% 0%, 0% 40%, 40% 40%, 30% 100%, 100% 60%, 60% 60%);
+    opacity: 0.7;
+    animation: sparkFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 3px rgba(0, 255, 136, 0.6));
+}
+
+.shield-spark.spark-emanating::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 4px;
+    height: 6px;
+    background: linear-gradient(135deg, #00ff88 0%, #00ccdd 100%);
+    clip-path: polygon(50% 0%, 0% 40%, 40% 40%, 30% 100%, 100% 60%, 60% 60%);
+    opacity: 0.5;
+    animation: sparkFloat 2s ease-in-out infinite 0.5s;
+    filter: drop-shadow(0 0 2px rgba(0, 255, 136, 0.4));
+}
+
+/* Trust Level Indicators */
+.trust-level-L4 .spark::before {
+    background: linear-gradient(135deg, #00ff88 0%, #00ccdd 100%);
+    animation: sparkPulse 1s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.8));
+}
+
+.trust-level-L3 .spark::before {
+    background: linear-gradient(135deg, #0088ff 0%, #4466ff 100%);
+    animation: sparkPulse 1.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(0, 136, 255, 0.6));
+}
+
+.trust-level-L2 .spark::before {
+    background: linear-gradient(135deg, #4444ff 0%, #6666ff 100%);
+    animation: sparkPulse 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 4px rgba(68, 68, 255, 0.4));
+}
+
+.trust-level-L1 .spark::before {
+    background: linear-gradient(135deg, #8888ff 0%, #aaaaff 100%);
+    animation: sparkPulse 2.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 2px rgba(136, 136, 255, 0.3));
+}
+
+.trust-level-L0 .spark::before {
+    background: linear-gradient(135deg, #cccccc 0%, #dddddd 100%);
+    animation: none;
+    opacity: 0.5;
+    filter: none;
+}
+
+/* Verification States */
+.verification-active .spark::before {
+    animation: sparkVerify 0.8s ease-in-out infinite;
+    background: linear-gradient(135deg, #10b981 0%, #00ff88 100%);
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.8));
+}
+
+.verification-pending .spark::before {
+    animation: sparkPending 1.5s ease-in-out infinite;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+}
+
+.verification-failed .spark::before {
+    animation: sparkError 2s ease-in-out infinite;
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.6));
+}
+
+/* Brand Logo Combination */
+.chitty-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    color: #00ff88;
+}
+
+.chitty-logo .shield-spark {
+    font-size: 1.2em;
+}
+
+/* Navigation Brand */
+.navbar-brand .shield-spark {
+    margin-right: 8px;
+}
+
+/* Trust Score Cards */
+.trust-score-card .shield-spark {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 1.1em;
+}
+
+/* Trust Level Badges */
+.chitty-level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.chitty-level-badge .shield-spark {
+    font-size: 0.9em;
+}
+
+/* Network Visualization */
+.network-node .shield-spark {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    font-size: 0.7em;
+}
+
+/* Insight Cards */
+.insight-card.positive .shield-spark .spark::before {
+    color: #10b981;
+    animation: sparkSuccess 2s ease-in-out infinite;
+}
+
+.insight-card.negative .shield-spark .spark::before {
+    color: #ef4444;
+    animation: sparkWarning 2s ease-in-out infinite;
+}
+
+/* Radar Chart Center */
+.radar-chart-spark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.radar-chart-spark .spark::before {
+    width: 16px;
+    height: 20px;
+}
+
+/* Loading States */
+.loading .spark::before {
+    animation: sparkLoading 1s linear infinite;
+}
+
+/* Hover Effects */
+.shield-spark:hover .spark::before {
+    transform: scale(1.2);
+    transition: transform 0.2s ease;
+}
+
+/* Animations */
+@keyframes sparkPulse {
+    0%, 100% { 
+        opacity: 1; 
+        transform: scale(1); 
+        filter: drop-shadow(0 0 4px currentColor) brightness(1);
+    }
+    50% { 
+        opacity: 0.8; 
+        transform: scale(1.15); 
+        filter: drop-shadow(0 0 8px currentColor) brightness(1.2);
+    }
+}
+
+@keyframes sparkFloat {
+    0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.7; }
+    50% { transform: translateX(-50%) translateY(-4px); opacity: 1; }
+}
+
+@keyframes sparkVerify {
+    0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    25% { opacity: 0.8; transform: scale(1.2) rotate(90deg); }
+    50% { opacity: 1; transform: scale(1) rotate(180deg); }
+    75% { opacity: 0.8; transform: scale(1.2) rotate(270deg); }
+}
+
+@keyframes sparkPending {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+@keyframes sparkError {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    25%, 75% { opacity: 0.5; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes sparkSuccess {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.15); }
+}
+
+@keyframes sparkWarning {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    33% { opacity: 0.6; transform: scale(0.95); }
+    66% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes sparkLoading {
+    0% { transform: rotate(0deg); opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { transform: rotate(360deg); opacity: 0.3; }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .shield-spark {
+        font-size: 0.9em;
+    }
+    
+    .chitty-logo .shield-spark {
+        font-size: 1em;
+    }
+    
+    .trust-score-card .shield-spark {
+        font-size: 1em;
+        top: 8px;
+        right: 8px;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .spark::before,
+    .shield-spark::after {
+        animation: none;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .spark::before {
+        text-shadow: 0 0 2px currentColor;
+    }
+}

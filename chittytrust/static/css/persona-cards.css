@@ -1,0 +1,185 @@
+/* Enhanced Persona Cards with Shield-Spark Integration */
+
+.persona-card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border: 2px solid #333;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.persona-card:hover {
+    border-color: #00ff88;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.2);
+}
+
+.persona-card.active {
+    border-color: #00ff88;
+    background: linear-gradient(135deg, #0a2a1a 0%, #1a3a2a 100%);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.persona-card.active .shield-spark {
+    animation: sparkActivation 0.8s ease-out;
+}
+
+.persona-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.persona-avatar {
+    font-size: 2.5em;
+    margin-bottom: 8px;
+    text-align: center;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.persona-card .shield-spark {
+    position: relative;
+    font-size: 1.2em;
+    opacity: 0.8;
+}
+
+.persona-card:hover .shield-spark,
+.persona-card.active .shield-spark {
+    opacity: 1;
+}
+
+.persona-name {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.persona-description {
+    font-size: 0.9em;
+    color: #cccccc;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    text-align: center;
+    min-height: 40px;
+}
+
+.persona-type {
+    font-size: 0.8em;
+    color: #00ff88;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-align: center;
+    padding: 4px 8px;
+    background: rgba(0, 255, 136, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+/* Loading state for persona cards */
+.persona-card.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.persona-card.loading .shield-spark .spark::before {
+    animation: sparkLoading 1s linear infinite;
+}
+
+/* Verification state indicators */
+.persona-card .verification-active .spark::before {
+    color: #10b981;
+    text-shadow: 0 0 8px #10b981;
+}
+
+.persona-card .verification-pending .spark::before {
+    color: #f59e0b;
+    text-shadow: 0 0 6px #f59e0b;
+}
+
+.persona-card .verification-failed .spark::before {
+    color: #ef4444;
+    text-shadow: 0 0 6px #ef4444;
+}
+
+/* Spark activation animation */
+@keyframes sparkActivation {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Different persona trust levels */
+.persona-card[data-persona-id="alice"] .shield-spark {
+    --spark-color: #00ff88;
+}
+
+.persona-card[data-persona-id="bob"] .shield-spark {
+    --spark-color: #4444ff;
+}
+
+.persona-card[data-persona-id="charlie"] .shield-spark {
+    --spark-color: #0088ff;
+}
+
+/* Grid layout for personas */
+.persona-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .persona-selector {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .persona-card {
+        padding: 16px;
+        margin: 5px;
+    }
+    
+    .persona-avatar {
+        font-size: 2em;
+    }
+    
+    .persona-name {
+        font-size: 1.1em;
+    }
+}
+
+/* Accessibility improvements */
+.persona-card:focus {
+    outline: 2px solid #00ff88;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .persona-card,
+    .shield-spark {
+        transition: none;
+    }
+    
+    .persona-card:hover {
+        transform: none;
+    }
+}

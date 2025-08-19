@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChittyOS Ecosystem - Complete Trust Platform</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced-ui.css') }}">
+    
+    <style>
+        .ecosystem-header {
+            background: linear-gradient(135deg, #1e1e3f 0%, #16213e 100%);
+            padding: 4rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ecosystem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .component-card {
+            background: linear-gradient(145deg, #1e1e3f, #16213e);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(0, 136, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .component-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+            transition: left 0.8s;
+        }
+        
+        .component-card:hover::before {
+            left: 100%;
+        }
+        
+        .component-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(0, 136, 255, 0.2);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .chitty-score-display {
+            background: linear-gradient(45deg, #0088ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .pipeline-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        
+        .pipeline-step {
+            background: rgba(26, 26, 46, 0.6);
+            padding: 1rem 1.5rem;
+            border-radius: 25px;
+            border: 1px solid rgba(0, 136, 255, 0.3);
+            color: #ffffff;
+            position: relative;
+        }
+        
+        .pipeline-arrow {
+            color: #00ff88;
+            font-size: 1.5rem;
+        }
+        
+        .test-section {
+            background: rgba(26, 26, 46, 0.4);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .chitty-id-generator {
+            background: linear-gradient(145deg, #2d2d5f, #1e1e3f);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body class="bg-chitty-dark text-white">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-chitty-darker">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-chitty-green" href="/">
+                <i data-feather="shield" class="me-2"></i>
+                ChittyOS
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Dashboard</a>
+                <a class="nav-link" href="/ledger">Ledger</a>
+                <a class="nav-link" href="/partners">Partners</a>
+                <a class="nav-link active" href="/chittyos">Ecosystem</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Ecosystem Header -->
+    <div class="ecosystem-header">
+        <div class="container text-center">
+            <h1 class="display-3 fw-bold text-white mb-3">
+                ChittyOS Ecosystem
+            </h1>
+            <p class="lead text-muted mb-4">
+                Complete trust verification platform with integrated Chitty Score™ algorithm
+            </p>
+            <div class="chitty-score-display" id="ecosystem-score">
+                Loading...
+            </div>
+            <p class="text-muted">Real-time ecosystem trust score</p>
+        </div>
+    </div>
+
+    <!-- Trust Pipeline Flow -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h2 class="text-white mb-4">Trust Verification Pipeline</h2>
+                <div class="pipeline-flow" id="trust-pipeline">
+                    <!-- Pipeline steps will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ecosystem Components -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-white mb-4">
+                    <i data-feather="grid" class="me-2"></i>
+                    Platform Components
+                </h2>
+                <div class="ecosystem-grid" id="ecosystem-components">
+                    <!-- Components will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live ChittyID Generator -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="chitty-id-generator">
+                    <h3 class="text-chitty-green mb-4 text-center">
+                        <i data-feather="credit-card" class="me-2"></i>
+                        Live ChittyID Generator
+                    </h3>
+                    <p class="text-muted text-center mb-4">
+                        Generate a verified ChittyID with real-time Chitty Score™ calculation
+                    </p>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-white">Vertical Type</label>
+                            <select class="form-select bg-chitty-darker text-white border-chitty-blue" id="vertical-type">
+                                <option value="user">User</option>
+                                <option value="business">Business</option>
+                                <option value="organization">Organization</option>
+                                <option value="ai_agent">AI Agent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-white">Verification Level</label>
+                            <select class="form-select bg-chitty-darker text-white border-chitty-blue" id="verification-level">
+                                <option value="full">Full Verification</option>
+                                <option value="partial">Partial Verification</option>
+                                <option value="minimal">Minimal Verification</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button class="btn btn-chitty-green btn-lg px-5" onclick="generateChittyID()">
+                            <i data-feather="plus-circle" class="me-2"></i>
+                            Generate ChittyID
+                        </button>
+                    </div>
+                    
+                    <div id="generation-result" class="mt-4" style="display: none;">
+                        <!-- Generation result will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chitty Score™ Calculator -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="test-section">
+                    <h3 class="text-chitty-green mb-4 text-center">
+                        <i data-feather="target" class="me-2"></i>
+                        Chitty Score™ Calculator
+                    </h3>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control bg-chitty-darker text-white border-chitty-blue" 
+                                   id="chitty-id-input" placeholder="Enter ChittyID (e.g., CH-2025-VER-123ABC-A)">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-chitty-green w-100" onclick="calculateChittyScore()">
+                                Calculate Score
+                            </button>
+                        </div>
+                    </div>
+                    <div id="score-result" class="mt-4" style="display: none;">
+                        <!-- Score result will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+        
+        let ecosystemData = null;
+        
+        // Load ecosystem status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEcosystemStatus();
+        });
+        
+        async function loadEcosystemStatus() {
+            try {
+                const response = await fetch('/api/chittyos/status');
+                ecosystemData = await response.json();
+                
+                if (ecosystemData.error) {
+                    throw new Error(ecosystemData.error);
+                }
+                
+                renderEcosystemComponents();
+                renderTrustPipeline();
+                updateEcosystemScore();
+                
+            } catch (error) {
+                console.error('Failed to load ecosystem status:', error);
+                document.getElementById('ecosystem-score').textContent = 'Error loading';
+            }
+        }
+        
+        function renderEcosystemComponents() {
+            const container = document.getElementById('ecosystem-components');
+            const components = ecosystemData.components;
+            
+            const componentCards = Object.entries(components).map(([key, component]) => `
+                <div class="component-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h4 class="text-white">${component.service}</h4>
+                        <span class="status-badge">
+                            <i data-feather="check-circle" style="width: 16px; height: 16px;"></i>
+                            ${component.status}
+                        </span>
+                    </div>
+                    <p class="text-muted mb-3">${getComponentDescription(key)}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <code class="text-chitty-green">${component.endpoint}</code>
+                        <button class="btn btn-outline-success btn-sm" onclick="testComponent('${key}', '${component.endpoint}')">
+                            Test API
+                        </button>
+                    </div>
+                    ${key === 'chitty_score' ? '<div class="mt-2"><small class="text-chitty-green">★ Proprietary Algorithm</small></div>' : ''}
+                </div>
+            `).join('');
+            
+            container.innerHTML = componentCards;
+            feather.replace();
+        }
+        
+        function renderTrustPipeline() {
+            const container = document.getElementById('trust-pipeline');
+            const pipeline = ecosystemData.trust_pipeline;
+            
+            const pipelineHtml = pipeline.map((step, index) => `
+                ${index > 0 ? '<i data-feather="arrow-right" class="pipeline-arrow"></i>' : ''}
+                <div class="pipeline-step">
+                    <strong>${step.split(' (')[0]}</strong>
+                    <br><small class="text-muted">${step.split('(')[1]?.replace(')', '') || ''}</small>
+                </div>
+            `).join('');
+            
+            container.innerHTML = pipelineHtml;
+            feather.replace();
+        }
+        
+        function updateEcosystemScore() {
+            // Calculate ecosystem health score
+            const totalComponents = Object.keys(ecosystemData.components).length;
+            const operationalComponents = Object.values(ecosystemData.components)
+                .filter(comp => comp.status === 'operational').length;
+            
+            const healthScore = Math.round((operationalComponents / totalComponents) * 100);
+            document.getElementById('ecosystem-score').textContent = healthScore + '%';
+        }
+        
+        function getComponentDescription(key) {
+            const descriptions = {
+                'chitty_id': 'Digital identity verification with blockchain-anchored credentials',
+                'chitty_trust': '6-dimensional trust scoring across Source, Temporal, Channel, Outcome, Network, and Justice',
+                'chitty_score': 'Proprietary trust algorithm emphasizing justice and outcomes for balanced assessment',
+                'chitty_counsel': 'Legal compliance guidance and regulatory framework integration',
+                'chitty_assets': 'Digital asset portfolio management with trust-based access controls',
+                'chitty_finance': 'Financial services including payments, loans, and trust-based credit scoring',
+                'chitty_chain': 'Immutable blockchain ledger for permanent trust record anchoring',
+                'chitty_beacon': 'Dead simple app tracking with startup/shutdown events and platform detection'
+            };
+            return descriptions[key] || 'Advanced trust platform component';
+        }
+        
+        async function generateChittyID() {
+            try {
+                const vertical = document.getElementById('vertical-type').value;
+                const verificationLevel = document.getElementById('verification-level').value;
+                
+                const verificationData = {
+                    identity_verified: verificationLevel !== 'minimal',
+                    address_verified: verificationLevel === 'full',
+                    phone_verified: verificationLevel !== 'minimal',
+                    email_verified: true
+                };
+                
+                const response = await fetch('/api/chitty-id/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vertical: vertical,
+                        ...verificationData
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const resultHtml = `
+                        <div class="alert alert-success">
+                            <h5 class="text-success mb-3">
+                                <i data-feather="check-circle" class="me-2"></i>
+                                ChittyID Generated Successfully
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <strong>ChittyID:</strong><br>
+                                    <code class="text-success">${result.chitty_id}</code>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Chitty Score™:</strong><br>
+                                    <span class="h4 text-success">${result.chitty_score}</span>
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-3">
+                                <div class="col-md-3">
+                                    <small class="text-muted">People's Score</small><br>
+                                    <strong>${Math.round(result.trust_scores.peoples_score)}</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">Legal Score</small><br>
+                                    <strong>${Math.round(result.trust_scores.legal_score)}</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">State Score</small><br>
+                                    <strong>${Math.round(result.trust_scores.state_score)}</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">Trust Level</small><br>
+                                    <strong class="text-success">${result.trust_scores.trust_level}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('generation-result').innerHTML = resultHtml;
+                    document.getElementById('generation-result').style.display = 'block';
+                    
+                    // Auto-fill the calculator
+                    document.getElementById('chitty-id-input').value = result.chitty_id;
+                    
+                } else {
+                    throw new Error(result.error || 'Generation failed');
+                }
+                
+                feather.replace();
+                
+            } catch (error) {
+                console.error('ChittyID generation failed:', error);
+                document.getElementById('generation-result').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Generation Failed:</strong> ${error.message}
+                    </div>
+                `;
+                document.getElementById('generation-result').style.display = 'block';
+            }
+        }
+        
+        async function calculateChittyScore() {
+            try {
+                const chittyId = document.getElementById('chitty-id-input').value.trim();
+                
+                if (!chittyId) {
+                    throw new Error('Please enter a ChittyID');
+                }
+                
+                const response = await fetch('/api/chitty-score/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chitty_id: chittyId,
+                        verification_data: {}
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const resultHtml = `
+                        <div class="alert alert-info">
+                            <h5 class="text-info mb-3">
+                                <i data-feather="target" class="me-2"></i>
+                                Chitty Score™ Calculated
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="h2 text-info">${result.chitty_score}</div>
+                                        <small class="text-muted">Chitty Score™</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="h4">${result.composite_score}</div>
+                                        <small class="text-muted">Composite</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="h4 text-success">${result.trust_level}</div>
+                                        <small class="text-muted">Trust Level</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-3">
+                                <div class="col-md-4">
+                                    <small class="text-muted">People's Score</small><br>
+                                    <strong>${Math.round(result.peoples_score)}</strong>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Legal Score</small><br>
+                                    <strong>${Math.round(result.legal_score)}</strong>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">State Score</small><br>
+                                    <strong>${Math.round(result.state_score)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('score-result').innerHTML = resultHtml;
+                    document.getElementById('score-result').style.display = 'block';
+                    
+                } else {
+                    throw new Error(result.error || 'Calculation failed');
+                }
+                
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Chitty Score calculation failed:', error);
+                document.getElementById('score-result').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Calculation Failed:</strong> ${error.message}
+                    </div>
+                `;
+                document.getElementById('score-result').style.display = 'block';
+            }
+        }
+        
+        async function testComponent(key, endpoint) {
+            // Simple component testing
+            alert(`Testing ${key} component at ${endpoint}`);
+        }
+    </script>
+</body>
+</html>

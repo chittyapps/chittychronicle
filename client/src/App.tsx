@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Timeline from "@/pages/timeline";
+import Timelines from "@/pages/timelines";
 import Automation from "@/pages/automation";
 import Dashboard from "@/pages/dashboard";
 
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/timelines" component={Timelines} />
       <Route path="/timeline/:caseId" component={Timeline} />
       <Route path="/automation/:caseId" component={Automation} />
       <Route component={NotFound} />

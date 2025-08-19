@@ -5,7 +5,9 @@
       "Bash(curl -X POST http://localhost:5000/api/timeline/entries )",
       "Bash(curl http://localhost:5000/api/timeline/entries?caseId=0d5c3985-8e46-4fe3-a00d-a0f2cd7e11a6)",
       "Bash(curl \"http://localhost:5000/api/timeline/search?caseId=0d5c3985-8e46-4fe3-a00d-a0f2cd7e11a6&query=complaint\")",
-      "Bash(npm run dev)"
+      "Bash(npm run dev)",
+      "Bash(PORT=5001 npm run dev)",
+      "Bash(curl -s http://localhost:5001/api/health)"
     ],
     "deny": [],
     "ask": []

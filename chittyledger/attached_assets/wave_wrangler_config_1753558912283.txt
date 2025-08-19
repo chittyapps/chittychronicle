@@ -1,0 +1,45 @@
+# wrangler.toml - Cloudflare Worker Configuration for Wave Accounting MCP
+name = "wave-accounting-mcp"
+main = "src/index.ts"
+compatibility_date = "2024-01-15"
+node_compat = true
+
+[env.production]
+name = "wave-accounting-mcp-prod"
+
+[env.staging]
+name = "wave-accounting-mcp-staging"
+
+# Environment variables (set via wrangler secret put)
+# COORDINATOR_MCP_URL
+# CHATGPT_MCP_URL
+# FORTRESS_MCP_URL
+# CHITTY_DATABASE_URL
+# CHITTY_ENCRYPTION_KEY
+# WAVE_CLIENT_ID
+# WAVE_CLIENT_SECRET
+# WAVE_ACCESS_TOKEN
+# WAVE_BUSINESS_ID
+# CAO_WORKSPACE_PATH
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wave-accounting-sessions"
+database_id = "your-d1-database-id"
+
+[build]
+command = "npm run build"
+
+[vars]
+ENVIRONMENT = "production"
+VERSION = "1.0.0"
+WAVE_API_URL = "https://gql.waveapps.com/graphql/public"
+
+# Rate limiting configuration
+[limits]
+cpu_ms = 50000
+
+# Durable Objects for session management (if needed)
+[[durable_objects.bindings]]
+name = "WAVE_SESSIONS"
+class_name = "WaveSessionManager"

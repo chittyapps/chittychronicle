@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChittyTrust Dynamic Spark Design System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="../css/chitty.css">
+    <link rel="stylesheet" href="../css/spark-shield.css">
+    <link rel="stylesheet" href="../css/dynamic-spark-logo.css">
+    <style>
+        body { background: #0a0a0a; color: #fff; padding: 2rem 0; }
+        .demo-section { margin: 3rem 0; }
+        .demo-card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 2rem; margin: 1rem 0; }
+        .example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .example-item { background: #2a2a2a; padding: 1.5rem; border-radius: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-5">
+            <div class="mb-4">
+                <a class="chitty-dynamic-logo" href="#" style="font-size: 2em;">
+                    <div class="dynamic-spark-container">
+                        <i data-feather="shield" class="dynamic-spark-shield"></i>
+                        <div class="dynamic-lightning-spark"></div>
+                    </div>
+                    <span class="chitty-brand-text">ChittyTrust</span>
+                </a>
+            </div>
+            <h1 class="text-chitty-green">Dynamic Spark Design System</h1>
+            <p class="lead text-muted">Comprehensive showcase of shield-spark combinations</p>
+        </header>
+
+        <!-- Logo Variations -->
+        <section class="demo-section">
+            <div class="demo-card">
+                <h2 class="text-chitty-blue mb-4">Brand Logo Variations</h2>
+                <div class="example-grid">
+                    <div class="example-item">
+                        <h6>Primary Logo</h6>
+                        <a class="chitty-dynamic-logo" href="#">
+                            <div class="dynamic-spark-container">
+                                <i data-feather="shield" class="dynamic-spark-shield"></i>
+                                <div class="dynamic-lightning-spark"></div>
+                            </div>
+                            <span class="chitty-brand-text">ChittyTrust</span>
+                        </a>
+                    </div>
+                    <div class="example-item">
+                        <h6>Compact Version</h6>
+                        <a class="chitty-dynamic-logo" href="#" style="font-size: 0.8em;">
+                            <div class="dynamic-spark-container">
+                                <i data-feather="shield" class="dynamic-spark-shield"></i>
+                                <div class="dynamic-lightning-spark"></div>
+                            </div>
+                            <span class="chitty-brand-text">CT</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trust Levels -->
+        <section class="demo-section">
+            <div class="demo-card">
+                <h2 class="text-chitty-blue mb-4">Trust Level Indicators</h2>
+                <div class="example-grid">
+                    <div class="example-item">
+                        <h6>Level 4 (L4)</h6>
+                        <div class="shield-spark spark-over trust-level-L4">
+                            <i data-feather="shield" style="font-size: 2em; color: #00ff88;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-muted d-block mt-2">Highest Trust</small>
+                    </div>
+                    <div class="example-item">
+                        <h6>Level 3 (L3)</h6>
+                        <div class="shield-spark spark-inside trust-level-L3">
+                            <i data-feather="shield" style="font-size: 2em; color: #0088ff;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-muted d-block mt-2">High Trust</small>
+                    </div>
+                    <div class="example-item">
+                        <h6>Level 2 (L2)</h6>
+                        <div class="shield-spark spark-over trust-level-L2">
+                            <i data-feather="shield" style="font-size: 2em; color: #4444ff;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-muted d-block mt-2">Medium Trust</small>
+                    </div>
+                    <div class="example-item">
+                        <h6>Level 1 (L1)</h6>
+                        <div class="shield-spark spark-inside trust-level-L1">
+                            <i data-feather="shield" style="font-size: 2em; color: #8888ff;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-muted d-block mt-2">Basic Trust</small>
+                    </div>
+                    <div class="example-item">
+                        <h6>Level 0 (L0)</h6>
+                        <div class="shield-spark spark-over trust-level-L0">
+                            <i data-feather="shield" style="font-size: 2em; color: #cccccc;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-muted d-block mt-2">Unverified</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Verification States -->
+        <section class="demo-section">
+            <div class="demo-card">
+                <h2 class="text-chitty-blue mb-4">Verification States</h2>
+                <div class="example-grid">
+                    <div class="example-item">
+                        <h6>Verification Active</h6>
+                        <div class="shield-spark spark-emanating trust-level-L4 verification-active">
+                            <i data-feather="shield" style="font-size: 2em; color: #10b981;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-success d-block mt-2">✓ Verified</small>
+                    </div>
+                    <div class="example-item">
+                        <h6>Verification Pending</h6>
+                        <div class="shield-spark spark-over trust-level-L2 verification-pending">
+                            <i data-feather="shield" style="font-size: 2em; color: #f59e0b;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-warning d-block mt-2">⏳ Pending</small>
+                    </div>
+                    <div class="example-item">
+                        <h6>Verification Failed</h6>
+                        <div class="shield-spark spark-inside trust-level-L1 verification-failed">
+                            <i data-feather="shield" style="font-size: 2em; color: #ef4444;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-danger d-block mt-2">✗ Failed</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Spark Combinations -->
+        <section class="demo-section">
+            <div class="demo-card">
+                <h2 class="text-chitty-blue mb-4">Spark Position Combinations</h2>
+                <div class="example-grid">
+                    <div class="example-item">
+                        <h6>Spark Over Shield</h6>
+                        <div class="shield-spark spark-over trust-level-L3">
+                            <i data-feather="shield" style="font-size: 2em; color: #0088ff;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-muted d-block mt-2">Dynamic overlay</small>
+                    </div>
+                    <div class="example-item">
+                        <h6>Spark Inside Shield</h6>
+                        <div class="shield-spark spark-inside trust-level-L4">
+                            <i data-feather="shield" style="font-size: 2em; color: #00ff88;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-muted d-block mt-2">Core energy</small>
+                    </div>
+                    <div class="example-item">
+                        <h6>Spark Emanating</h6>
+                        <div class="shield-spark spark-emanating trust-level-L4">
+                            <i data-feather="shield" style="font-size: 2em; color: #00ff88;"></i>
+                            <span class="spark"></span>
+                        </div>
+                        <small class="text-muted d-block mt-2">Multiple sparks</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="demo-section">
+            <div class="demo-card">
+                <h2 class="text-chitty-blue mb-4">Practical Use Cases</h2>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary position-relative">
+                            <div class="shield-spark spark-inside trust-level-L3">
+                                <span class="spark"></span>
+                            </div>
+                            <div class="card-body text-center">
+                                <i data-feather="heart" class="mb-2 text-danger"></i>
+                                <h6 class="text-muted mb-1">Trust Score Card</h6>
+                                <div class="h3 mb-0">87</div>
+                                <small class="text-muted">With spark indicator</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-chitty-green position-relative">
+                            <div class="shield-spark spark-emanating trust-level-L4">
+                                <i data-feather="shield" class="text-chitty-green"></i>
+                                <span class="spark"></span>
+                            </div>
+                            <div class="card-body text-center">
+                                <i data-feather="star" class="mb-2 text-chitty-green"></i>
+                                <h6 class="text-muted mb-1">Premium Feature</h6>
+                                <div class="h3 text-chitty-green mb-0">95</div>
+                                <small class="text-muted">Enhanced sparks</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="shield-spark spark-over trust-level-L2 me-3">
+                                        <i data-feather="shield" style="color: #4444ff;"></i>
+                                        <span class="spark"></span>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Profile Badge</h6>
+                                        <small class="text-muted">User verification</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center mt-5">
+            <p class="text-muted">ChittyTrust Dynamic Spark Design System - Professional trust visualization</p>
+        </footer>
+    </div>
+
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>

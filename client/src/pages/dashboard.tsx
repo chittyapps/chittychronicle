@@ -172,11 +172,25 @@ export default function Dashboard() {
     }
   };
 
+  // Get current case details for sidebar
+  const currentCaseDetails = cases.find((c: any) => c.id === selectedCase);
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      {currentCaseDetails && (
+        <Sidebar 
+          caseDetails={currentCaseDetails}
+          deadlines={deadlines?.deadlines?.map(d => d.entry) || []}
+          onCreateEntry={() => {
+            toast({
+              title: "Create Timeline Entry",
+              description: "Navigate to Timeline to create entries",
+            });
+          }}
+        />
+      )}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <AppHeader />
+        <AppHeader currentCase={currentCaseDetails} />
         
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto space-y-6">

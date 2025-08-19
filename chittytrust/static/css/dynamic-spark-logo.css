@@ -1,0 +1,187 @@
+/* Dynamic Spark Logo Component for ChittyTrust */
+
+.chitty-dynamic-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    color: #00ff88;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.chitty-dynamic-logo:hover {
+    color: #00ff88;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+/* Spark Container */
+.dynamic-spark-container {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Shield Base */
+.dynamic-spark-shield {
+    color: #00ff88;
+    font-size: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Clean Dynamic Lightning Spark */
+.dynamic-lightning-spark {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 12px;
+    height: 16px;
+    z-index: 2;
+}
+
+.dynamic-lightning-spark svg {
+    width: 100%;
+    height: 100%;
+    animation: dynamicSparkPulse 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.5));
+}
+
+/* Secondary Spark Effects */
+.dynamic-spark-container::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 4px;
+    width: 6px;
+    height: 8px;
+    background: linear-gradient(135deg, #00ff88 0%, #00ccdd 100%);
+    clip-path: polygon(50% 0%, 0% 40%, 40% 40%, 30% 100%, 100% 60%, 60% 60%);
+    opacity: 0.6;
+    animation: dynamicSparkFloat 3s ease-in-out infinite 0.5s;
+    filter: drop-shadow(0 0 3px rgba(0, 255, 136, 0.5));
+}
+
+.dynamic-spark-container::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    right: -2px;
+    width: 4px;
+    height: 6px;
+    background: linear-gradient(135deg, #0088ff 0%, #4466ff 100%);
+    clip-path: polygon(50% 0%, 0% 40%, 40% 40%, 30% 100%, 100% 60%, 60% 60%);
+    opacity: 0.4;
+    animation: dynamicSparkFloat 2s ease-in-out infinite 1s;
+    filter: drop-shadow(0 0 2px rgba(0, 136, 255, 0.4));
+}
+
+/* Hover Enhancement */
+.chitty-dynamic-logo:hover .dynamic-lightning-spark svg {
+    animation: dynamicSparkActive 1.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8));
+}
+
+.chitty-dynamic-logo:hover .dynamic-spark-container::before,
+.chitty-dynamic-logo:hover .dynamic-spark-container::after {
+    opacity: 0.8;
+    animation-duration: 1.5s;
+}
+
+/* Brand Text */
+.chitty-brand-text {
+    font-size: 1.4em;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #00ff88 0%, #00ccdd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Animations */
+@keyframes dynamicSparkPulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes dynamicSparkActive {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.8;
+        transform: scale(1.15);
+    }
+}
+
+@keyframes dynamicSparkFloat {
+    0%, 100% { 
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.6;
+    }
+    50% { 
+        transform: translateY(-2px) rotate(5deg);
+        opacity: 0.8;
+    }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .chitty-dynamic-logo {
+        gap: 8px;
+    }
+    
+    .dynamic-spark-container {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .dynamic-spark-shield {
+        font-size: 20px;
+    }
+    
+    .dynamic-lightning-spark {
+        width: 10px;
+        height: 14px;
+    }
+    
+    .chitty-brand-text {
+        font-size: 1.2em;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .dynamic-lightning-spark,
+    .dynamic-spark-container::before,
+    .dynamic-spark-container::after {
+        animation: none;
+    }
+    
+    .chitty-dynamic-logo:hover {
+        transform: none;
+    }
+}
+
+/* High Contrast Support */
+@media (prefers-contrast: high) {
+    .dynamic-lightning-spark {
+        filter: drop-shadow(0 0 2px #000) contrast(1.5);
+    }
+    
+    .chitty-brand-text {
+        -webkit-text-fill-color: #00ff88;
+        color: #00ff88;
+    }
+}

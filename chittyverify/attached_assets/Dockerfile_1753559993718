@@ -1,0 +1,77 @@
+# ChittyChain Evidence Ledger - Production Docker Image
+FROM node:20-alpine AS base
+
+# Install dependencies for PostgreSQL client and build tools
+RUN apk add --no-cache \
+    postgresql-client \
+    python3 \
+    make \
+    g++ \
+    git \
+    curl \
+    bash
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies
+FROM base AS prod-deps
+RUN npm ci --only=production
+
+# Install all dependencies for building
+FROM base AS dev-deps
+RUN npm ci
+
+# Build the application
+FROM dev-deps AS build
+COPY . .
+RUN npm run build 2>/dev/null || echo "No build step required"
+
+# Production image
+FROM base AS runtime
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Copy production dependencies
+COPY --from=prod-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copy application code
+COPY --chown=nodejs:nodejs . .
+
+# Copy database schema
+COPY --chown=nodejs:nodejs database/ ./database/
+
+# Set up health check script
+RUN echo '#!/bin/sh' > /app/healthcheck.sh && \
+    echo 'node chittychain-cli.js status || exit 1' >> /app/healthcheck.sh && \
+    chmod +x /app/healthcheck.sh
+
+# Create data directories
+RUN mkdir -p /app/data /app/logs && \
+    chown -R nodejs:nodejs /app/data /app/logs
+
+# Switch to non-root user
+USER nodejs
+
+# Expose ports
+EXPOSE 3000 3001 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD /app/healthcheck.sh
+
+# Environment variables
+ENV NODE_ENV=production \
+    PORT=3000 \
+    MCP_PORT=3001 \
+    API_PORT=8080 \
+    DATA_DIR=/app/data \
+    LOG_DIR=/app/logs
+
+# Start command with graceful shutdown
+CMD ["node", "--max-old-space-size=4096", "chittychain-server.js"]

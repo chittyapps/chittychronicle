@@ -1,0 +1,345 @@
+/* ChittyOS Trust Engine Styles */
+
+:root {
+    --chitty-dark: #0a0f1c;
+    --chitty-darker: #050812;
+    --chitty-blue: #0088ff;
+    --chitty-green: #00ff88;
+    --chitty-purple: #4444ff;
+    --chitty-gray: #1a1f2e;
+}
+
+body {
+    background-color: var(--chitty-dark);
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Custom Colors */
+.bg-chitty-dark { background-color: var(--chitty-dark) !important; }
+.bg-chitty-darker { background-color: var(--chitty-darker) !important; }
+.text-chitty-blue { color: var(--chitty-blue) !important; }
+.text-chitty-green { color: var(--chitty-green) !important; }
+.text-chitty-purple { color: var(--chitty-purple) !important; }
+.border-chitty-blue { border-color: var(--chitty-blue) !important; }
+.border-chitty-green { border-color: var(--chitty-green) !important; }
+
+/* Buttons */
+.btn-chitty-primary {
+    background: linear-gradient(135deg, var(--chitty-blue), var(--chitty-green));
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-chitty-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 136, 255, 0.3);
+    color: white;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--chitty-darker) 0%, var(--chitty-dark) 50%, var(--chitty-gray) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(0, 136, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.trust-stat {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 136, 255, 0.2);
+}
+
+.trust-preview-card {
+    transform: perspective(1000px) rotateY(-10deg);
+    transition: all 0.3s ease;
+}
+
+.trust-preview-card:hover {
+    transform: perspective(1000px) rotateY(0deg);
+}
+
+/* Progress Bars */
+.progress-sm {
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.progress-sm .progress-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+}
+
+/* Persona Selector */
+.persona-selector {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.persona-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    min-width: 280px;
+}
+
+.persona-card:hover {
+    border-color: var(--chitty-blue);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 136, 255, 0.2);
+}
+
+.persona-card.active {
+    border-color: var(--chitty-green);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.persona-avatar {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.persona-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.persona-description {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.persona-type {
+    display: inline-block;
+    background: rgba(0, 136, 255, 0.2);
+    color: var(--chitty-blue);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Trust Score Cards */
+.trust-score-card {
+    transition: all 0.3s ease;
+}
+
+.trust-score-card:hover {
+    transform: translateY(-3px);
+}
+
+.chitty-level-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Dimension Cards */
+.dimension-card {
+    transition: all 0.3s ease;
+}
+
+.dimension-card:hover {
+    transform: translateY(-5px);
+}
+
+.dimension-icon {
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dimension-icon svg {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+/* Output Score Cards */
+.output-score-card {
+    transition: all 0.3s ease;
+}
+
+.output-score-card:hover {
+    transform: translateY(-5px);
+}
+
+.score-weights {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Explanations Grid */
+.explanation-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 136, 255, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.explanation-card:hover {
+    border-color: var(--chitty-blue);
+    background: rgba(0, 136, 255, 0.1);
+}
+
+.explanation-title {
+    color: var(--chitty-green);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-transform: capitalize;
+}
+
+.explanation-text {
+    color: #ccc;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Animations */
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.score-animate {
+    animation: countUp 0.6s ease-out;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.loading-pulse {
+    animation: pulse 1.5s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero-section .display-4 {
+        font-size: 2.5rem;
+    }
+    
+    .trust-preview-card {
+        transform: none;
+        margin-top: 2rem;
+    }
+    
+    .persona-selector {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .persona-card {
+        min-width: 250px;
+    }
+    
+    .trust-stat {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--chitty-darker);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--chitty-blue);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--chitty-green);
+}
+
+/* Navbar Styling */
+.navbar-dark .navbar-brand:hover {
+    color: var(--chitty-green) !important;
+}
+
+/* Card Hover Effects */
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Special Effects for Chitty Score */
+.chitty-score .card {
+    position: relative;
+    overflow: hidden;
+}
+
+.chitty-score .card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+    transform: rotate(0deg);
+    transition: transform 0.6s;
+    pointer-events: none;
+}
+
+.chitty-score .card:hover::before {
+    transform: rotate(180deg);
+}

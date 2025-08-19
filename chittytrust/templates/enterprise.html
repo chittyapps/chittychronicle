@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChittyID Enterprise Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spark-shield.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dynamic-spark-logo.css') }}">
+    
+    <style>
+        .enterprise-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid #0088ff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .enterprise-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 136, 255, 0.2);
+            border-color: #00ff88;
+        }
+        
+        .blockchain-indicator {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(45deg, #F59E0B, #EF4444);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .notion-indicator {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(45deg, #3B82F6, #8B5CF6);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .integration-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .status-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        
+        .trust-passport {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .compliance-metric {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(0, 136, 255, 0.1);
+            border: 1px solid #0088ff;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00ff88;
+        }
+        
+        .api-demo {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .response-output {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 0.25rem;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            font-family: monospace;
+            color: #c9d1d9;
+            font-size: 0.875rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .integration-panel {
+            background: rgba(26, 26, 46, 0.8);
+            border: 1px solid #0088ff;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body class="bg-chitty-dark text-white">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-chitty-darker border-bottom border-chitty-blue">
+        <div class="container">
+            <a class="chitty-dynamic-logo" href="/">
+                <div class="dynamic-spark-container">
+                    <i data-feather="shield" class="dynamic-spark-shield"></i>
+                    <div class="dynamic-lightning-spark">
+                        <svg width="12" height="16" viewBox="0 0 16 20" class="dynamic-spark-svg">
+                            <path 
+                                d="M8 2 L6.5 9 L9.5 9 L7 18 L11 11 L8.5 11 Z" 
+                                fill="url(#logoSparkGradient)" 
+                                class="lightning-bolt"
+                            />
+                            <defs>
+                                <linearGradient id="logoSparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#F59E0B" />
+                                    <stop offset="100%" stop-color="#EF4444" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                </div>
+                <span class="navbar-brand-text ms-3">Enterprise Dashboard</span>
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Trust Engine</a>
+                <a class="nav-link" href="/marketplace">Marketplace</a>
+                <a class="nav-link" href="/partners">Partners</a>
+                <a class="nav-link active" href="/enterprise">Enterprise</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="container-fluid py-5" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%);">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-4">
+                Enterprise <span class="text-chitty-green">Command Center</span>
+            </h1>
+            <p class="lead mb-4">
+                Blockchain-verified trust with enterprise documentation and compliance automation
+            </p>
+            
+            <div class="integration-status justify-content-center">
+                <div class="blockchain-indicator">
+                    <div class="status-dot me-2"></div>
+                    ChittyChain Connected
+                </div>
+                <div class="notion-indicator ms-3">
+                    <div class="status-dot me-2"></div>
+                    Notion Integrated
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enterprise Metrics -->
+    <div class="container py-4">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="compliance-metric">
+                    <div class="metric-value" id="total-users">4</div>
+                    <div class="small text-muted">Total Users</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="compliance-metric">
+                    <div class="metric-value" id="avg-trust-score">78.5</div>
+                    <div class="small text-muted">Avg Trust Score</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="compliance-metric">
+                    <div class="metric-value" id="blockchain-records">47</div>
+                    <div class="small text-muted">Blockchain Records</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="compliance-metric">
+                    <div class="metric-value" id="compliance-status">95%</div>
+                    <div class="small text-muted">Compliance</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ChittyChain Integration Panel -->
+    <div class="container py-4">
+        <div class="integration-panel">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h3 class="text-chitty-green mb-4">
+                        <i data-feather="link" class="me-2"></i>
+                        ChittyChain Blockchain
+                    </h3>
+                    
+                    <div class="enterprise-card">
+                        <h5 class="text-chitty-blue mb-3">Trust Passport Generation</h5>
+                        <p class="text-muted mb-3">Create portable, blockchain-verified trust credentials</p>
+                        
+                        <div class="api-demo">
+                            <div class="d-flex gap-2 mb-2">
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-chitty-blue" 
+                                       placeholder="User ID" id="passport-user-id" value="alice_demo_123">
+                                <button class="btn btn-sm btn-chitty-green" onclick="generateTrustPassport()">
+                                    Generate Passport
+                                </button>
+                            </div>
+                            <div class="response-output" id="passport-output">
+                                Click "Generate Passport" to create blockchain-verified trust credentials
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="enterprise-card">
+                        <h5 class="text-chitty-blue mb-3">Blockchain Verification</h5>
+                        <p class="text-muted mb-3">Verify trust records on immutable blockchain</p>
+                        
+                        <div class="api-demo">
+                            <div class="d-flex gap-2 mb-2">
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-chitty-blue" 
+                                       placeholder="Transaction ID" id="verify-tx-id" value="ctx_alice_demo_123_0001">
+                                <button class="btn btn-sm btn-chitty-blue" onclick="verifyBlockchainRecord()">
+                                    Verify Record
+                                </button>
+                            </div>
+                            <div class="response-output" id="verify-output">
+                                Enter transaction ID to verify blockchain record integrity
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <h3 class="text-chitty-green mb-4">
+                        <i data-feather="zap" class="me-2"></i>
+                        ChittyChain Workflow
+                    </h3>
+                    
+                    <div class="enterprise-card">
+                        <h5 class="text-chitty-blue mb-3">Integrated Workflow</h5>
+                        <p class="text-muted mb-3">Execute ChittyTrust + ChittyVerify + ChittyChain in one workflow</p>
+                        
+                        <div class="api-demo">
+                            <div class="d-flex gap-2 mb-2">
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-chitty-blue" 
+                                       placeholder="ChittyID" id="workflow-user-id" value="user_alice_001">
+                                <button class="btn btn-sm btn-chitty-green" onclick="executeChittyWorkflow()">
+                                    Execute Workflow
+                                </button>
+                            </div>
+                            <div class="response-output" id="workflow-output">
+                                Execute complete ChittyTrust→ChittyVerify→ChittyChain→Evidence Ledger workflow
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <a href="https://www.notion.so/ChittyChain-Evidence-Ledger-24694de4357980dba689cf778c9708eb" 
+                               target="_blank" class="btn btn-sm btn-outline-chitty-blue">
+                                <i data-feather="external-link" class="me-1"></i>
+                                View Evidence Ledger
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="enterprise-card">
+                        <h5 class="text-chitty-blue mb-3">Integration Snippets</h5>
+                        <p class="text-muted mb-3">Generate ready-to-use code snippets for team collaboration</p>
+                        
+                        <div class="api-demo">
+                            <div class="d-flex gap-2 mb-2">
+                                <button class="btn btn-sm btn-chitty-blue" onclick="createIntegrationSnippets()">
+                                    Create Snippets Page
+                                </button>
+                            </div>
+                            <div class="response-output" id="snippets-output">
+                                Click "Create Snippets Page" to generate integration documentation for other teams
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Trust Passport Display -->
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="trust-passport" id="trust-passport-display" style="display: none;">
+                    <h4 class="text-chitty-green mb-3">
+                        <i data-feather="award" class="me-2"></i>
+                        ChittyID Trust Passport
+                    </h4>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <small class="text-muted">Passport ID</small>
+                            <div class="fw-bold" id="passport-id">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Verification Level</small>
+                            <div class="fw-bold text-chitty-green" id="passport-level">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Trust Score</small>
+                            <div class="fw-bold text-chitty-blue" id="passport-score">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Blockchain TX</small>
+                            <div class="fw-bold" id="passport-tx" style="font-family: monospace; font-size: 0.875rem;">-</div>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted">Cross-Platform Verified</small>
+                            <div class="fw-bold text-chitty-green">✓ Blockchain Anchored</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Showcase -->
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="h1 fw-bold text-chitty-blue mb-3">Enterprise Features</h2>
+            <p class="lead">Comprehensive trust infrastructure for enterprise-scale verification</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="enterprise-card text-center">
+                    <div class="mb-3">
+                        <i data-feather="shield-check" class="text-chitty-green" style="width: 3rem; height: 3rem;"></i>
+                    </div>
+                    <h5 class="text-chitty-green mb-3">Immutable Trust Records</h5>
+                    <p class="text-muted">Every trust calculation stored permanently on ChittyChain blockchain with cryptographic verification</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="enterprise-card text-center">
+                    <div class="mb-3">
+                        <i data-feather="file-text" class="text-chitty-blue" style="width: 3rem; height: 3rem;"></i>
+                    </div>
+                    <h5 class="text-chitty-green mb-3">Automated Documentation</h5>
+                    <p class="text-muted">Real-time audit trails and compliance reports automatically generated in Notion</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="enterprise-card text-center">
+                    <div class="mb-3">
+                        <i data-feather="globe" class="text-chitty-green" style="width: 3rem; height: 3rem;"></i>
+                    </div>
+                    <h5 class="text-chitty-green mb-3">Cross-Platform Trust</h5>
+                    <p class="text-muted">Portable trust passports that work across platforms, backed by blockchain verification</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/dynamic-spark.js') }}"></script>
+    
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Initialize dynamic spark system
+        if (window.dynamicSparkSystem) {
+            window.dynamicSparkSystem.initializeSparkElements();
+        }
+        
+        // Enterprise API Functions
+        async function generateTrustPassport() {
+            const userId = document.getElementById('passport-user-id').value;
+            const output = document.getElementById('passport-output');
+            
+            output.innerHTML = 'Generating blockchain-verified trust passport...';
+            
+            try {
+                const response = await fetch(`/api/blockchain/trust-passport/${userId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    output.innerHTML = `
+<strong>Trust Passport Generated:</strong>
+
+Passport ID: ${data.passport_id}
+User: ${data.user_id}
+Verification Level: ${data.verification_level}
+Current Trust Score: ${data.current_scores?.composite?.toFixed(1) || 'N/A'}
+Blockchain Transaction: ${data.blockchain_transaction || 'N/A'}
+Validity: ${data.validity_period}
+Cross-Platform Verified: ${data.cross_platform_verified ? '✓' : '✗'}
+
+<em>This passport can be used across platforms for instant trust verification</em>
+                    `;
+                    
+                    // Show passport display
+                    displayTrustPassport(data);
+                } else {
+                    output.innerHTML = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                output.innerHTML = `Error: ${error.message}`;
+            }
+        }
+        
+        async function verifyBlockchainRecord() {
+            const txId = document.getElementById('verify-tx-id').value;
+            const output = document.getElementById('verify-output');
+            
+            output.innerHTML = 'Verifying blockchain record...';
+            
+            try {
+                const response = await fetch(`/api/blockchain/verify/${txId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    output.innerHTML = `
+<strong>Blockchain Verification:</strong>
+
+Record Verified: ${data.verified ? '✓ VALID' : '✗ INVALID'}
+Blockchain Confirmed: ${data.blockchain_confirmed ? '✓' : '✗'}
+Verification Time: ${data.verification_time}
+
+${data.record ? `
+Trust Record:
+- Composite Score: ${data.record.trust_scores?.composite || 'N/A'}
+- Timestamp: ${data.record.timestamp}
+- Transaction ID: ${data.record.transaction_id}
+` : ''}
+
+<em>${data.verified ? 'Record integrity verified on blockchain' : 'Record not found or corrupted'}</em>
+                    `;
+                } else {
+                    output.innerHTML = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                output.innerHTML = `Error: ${error.message}`;
+            }
+        }
+        
+        async function executeChittyWorkflow() {
+            const userId = document.getElementById('workflow-user-id').value;
+            const output = document.getElementById('workflow-output');
+            
+            output.innerHTML = 'Executing integrated ChittyChain workflow...';
+            
+            try {
+                const response = await fetch(`/api/chitty-workflow/execute/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        verification_type: 'comprehensive'
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'completed') {
+                    output.innerHTML = `
+<strong>ChittyChain Workflow Completed:</strong>
+
+Workflow ID: ${data.workflow_id}
+User: ${data.trust_calculation?.user_id || userId}
+
+🔍 ChittyTrust Results:
+- Composite Score: ${data.trust_calculation?.scores?.composite?.toFixed(1) || 'N/A'}
+- Chitty Score™: ${data.trust_calculation?.scores?.chitty?.toFixed(1) || 'N/A'}
+- Verification Level: ${data.trust_calculation?.verification_level || 'N/A'}
+
+✅ ChittyVerify Status:
+- Verification Passed: ${data.verification?.verification_passed ? '✅' : '❌'}
+- Integrity Hash: ${data.verification?.verification_hash?.substring(0, 16) || 'N/A'}...
+
+🔗 ChittyChain Recording:
+- Blockchain TX: ${data.blockchain_transaction || 'N/A'}
+- Evidence Ledger ID: ${data.evidence_ledger_id || 'N/A'}
+
+📋 6D Trust Dimensions:
+- Source: ${data.trust_calculation?.dimensions?.source?.toFixed(1) || 'N/A'}
+- Temporal: ${data.trust_calculation?.dimensions?.temporal?.toFixed(1) || 'N/A'}
+- Channel: ${data.trust_calculation?.dimensions?.channel?.toFixed(1) || 'N/A'}
+- Outcome: ${data.trust_calculation?.dimensions?.outcome?.toFixed(1) || 'N/A'}
+- Network: ${data.trust_calculation?.dimensions?.network?.toFixed(1) || 'N/A'}
+- Justice: ${data.trust_calculation?.dimensions?.justice?.toFixed(1) || 'N/A'}
+
+🌐 Complete workflow documented in Evidence Ledger with blockchain verification
+                    `;
+                } else {
+                    output.innerHTML = `
+<strong>Workflow Failed:</strong>
+
+Status: ${data.status}
+Error: ${data.error || 'Unknown error'}
+Workflow ID: ${data.workflow_id || 'N/A'}
+
+<em>Check logs for detailed error information</em>
+                    `;
+                }
+            } catch (error) {
+                output.innerHTML = `Error: ${error.message}`;
+            }
+        }
+        
+        async function createIntegrationSnippets() {
+            const output = document.getElementById('snippets-output');
+            
+            output.innerHTML = 'Creating integration snippets page for team collaboration...';
+            
+            try {
+                const response = await fetch('/api/evidence-ledger/integration-snippets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    output.innerHTML = `
+<strong>Integration Snippets Created:</strong>
+
+Notion Page ID: ${data.notion_page_id}
+Description: ${data.description}
+Evidence Ledger: ${data.evidence_url}
+
+Generated Code Snippets:
+✅ Trust Passport Generation
+✅ Evidence Ledger Recording
+✅ 6D Trust Calculation
+✅ Enterprise Compliance Integration
+✅ Flask API Endpoints
+✅ Quick Start Guide
+
+<em>Ready-to-use code snippets now available for other teams to integrate ChittyTrust functionality</em>
+
+<a href="${data.evidence_url}" target="_blank" style="color: #00ff88;">View Integration Snippets →</a>
+                    `;
+                } else {
+                    output.innerHTML = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                output.innerHTML = `Error: ${error.message}`;
+            }
+        }
+        
+        function displayTrustPassport(passport) {
+            const display = document.getElementById('trust-passport-display');
+            
+            document.getElementById('passport-id').textContent = passport.passport_id;
+            document.getElementById('passport-level').textContent = passport.verification_level;
+            document.getElementById('passport-score').textContent = passport.current_scores?.composite?.toFixed(1) || 'N/A';
+            document.getElementById('passport-tx').textContent = passport.blockchain_transaction || 'N/A';
+            
+            display.style.display = 'block';
+            display.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Auto-refresh metrics
+        setInterval(() => {
+            // Update with real data in production
+            document.getElementById('blockchain-records').textContent = 47 + Math.floor(Math.random() * 5);
+        }, 30000);
+    </script>
+</body>
+</html>

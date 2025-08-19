@@ -12,6 +12,8 @@ import {
 } from "@shared/schema";
 import { ingestionService } from "./ingestionService";
 import { mcpService } from "./mcpService";
+import { chittyTrust } from "./chittyTrust";
+import { chittyBeacon } from "./chittyBeacon";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ChittyID authentication - temporarily disabled for development
@@ -69,6 +71,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Timeline entries
+  // Get all timeline entries across all cases
+  app.get('/api/timeline/all', async (req: any, res) => {
+    try {
+      const entries = await storage.getAllTimelineEntries();
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching all timeline entries:", error);
+      res.status(500).json({ message: "Failed to fetch timeline entries" });
+    }
+  });
+
   app.get('/api/timeline/entries', async (req: any, res) => {
     try {
       const { caseId, startDate, endDate, entryType, confidenceLevel, limit, offset } = req.query;
@@ -362,6 +375,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error detecting contradictions:", error);
       res.status(500).json({ message: "Failed to detect contradictions" });
+    }
+  });
+
+  // ChittyTrust endpoints
+  app.get('/api/trust/score/:entryId', async (req: any, res) => {
+    try {
+      const { caseId } = req.query;
+      const entry = await storage.getTimelineEntry(req.params.entryId, caseId as string);
+      if (!entry) {
+        return res.status(404).json({ message: "Entry not found" });
+      }
+      
+      const trustScore = await chittyTrust.calculateTrustScore(entry);
+      const attestation = await chittyTrust.createAttestation(entry, trustScore);
+      
+      res.json({ trustScore, attestation });
+    } catch (error) {
+      console.error("Error calculating trust score:", error);
+      res.status(500).json({ message: "Failed to calculate trust score" });
+    }
+  });
+
+  app.get('/api/trust/network/:caseId', async (req: any, res) => {
+    try {
+      const trustNetwork = await chittyTrust.getCaseTrustNetwork(req.params.caseId);
+      res.json(trustNetwork);
+    } catch (error) {
+      console.error("Error getting trust network:", error);
+      res.status(500).json({ message: "Failed to get trust network" });
+    }
+  });
+
+  app.post('/api/trust/verify/:entryId', async (req: any, res) => {
+    try {
+      const { caseId } = req.query;
+      const entry = await storage.getTimelineEntry(req.params.entryId, caseId as string);
+      if (!entry) {
+        return res.status(404).json({ message: "Entry not found" });
+      }
+      
+      const verification = await chittyTrust.requestExternalVerification(entry);
+      res.json({ success: true, verification });
+    } catch (error) {
+      console.error("Error requesting verification:", error);
+      res.status(500).json({ message: "Failed to request verification" });
+    }
+  });
+
+  // ChittyBeacon endpoints  
+  app.post('/api/beacon/subscribe', async (req: any, res) => {
+    try {
+      const userId = 'demo-user';
+      const subscription = {
+        userId,
+        ...req.body
+      };
+      
+      const subscriptionId = await chittyBeacon.subscribe(subscription);
+      res.json({ success: true, subscriptionId });
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ message: "Failed to create subscription" });
+    }
+  });
+
+  app.get('/api/beacon/alerts/:caseId', async (req: any, res) => {
+    try {
+      const stats = await chittyBeacon.getAlertStats(req.params.caseId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting alert stats:", error);
+      res.status(500).json({ message: "Failed to get alert stats" });
+    }
+  });
+
+  app.post('/api/beacon/monitor/:caseId', async (req: any, res) => {
+    try {
+      const deadlineAlerts = await chittyBeacon.monitorDeadlines(req.params.caseId);
+      const contradictionAlerts = await chittyBeacon.detectContradictions(req.params.caseId);
+      
+      res.json({ 
+        success: true, 
+        alerts: [...deadlineAlerts, ...contradictionAlerts],
+        summary: {
+          deadlines: deadlineAlerts.length,
+          contradictions: contradictionAlerts.length,
+          total: deadlineAlerts.length + contradictionAlerts.length
+        }
+      });
+    } catch (error) {
+      console.error("Error monitoring case:", error);
+      res.status(500).json({ message: "Failed to monitor case" });
+    }
+  });
+
+  app.get('/api/beacon/digest', async (req: any, res) => {
+    try {
+      const userId = 'demo-user';
+      const { period = 'daily' } = req.query;
+      
+      const digest = await chittyBeacon.generateDigest(
+        userId, 
+        period as 'daily' | 'weekly' | 'monthly'
+      );
+      
+      res.json(digest);
+    } catch (error) {
+      console.error("Error generating digest:", error);
+      res.status(500).json({ message: "Failed to generate digest" });
     }
   });
 

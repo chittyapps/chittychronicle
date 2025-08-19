@@ -1,0 +1,71 @@
+{
+  "blocks": [],
+  "pendingArtifacts": [
+    {
+      "artifactType": "CASE_REGISTRATION",
+      "chittyChainId": "CC-b4f2f6a92602-1752393418468-EV",
+      "courtCaseNumber": "PENDING",
+      "metadata": {
+        "parties": [
+          "Tyler",
+          "Landlord"
+        ],
+        "caseType": "eviction",
+        "description": "Tyler eviction case",
+        "filingDate": "2025-07-13T07:56:58.468Z",
+        "jurisdiction": "ILLINOIS-COOK",
+        "status": "ACTIVE",
+        "createdAt": "2025-07-13T07:56:58.468Z",
+        "createdBy": "chittyprose",
+        "systems": {
+          "chittyprose": true,
+          "chittycases": false,
+          "chittychain": true
+        }
+      },
+      "trustLevel": "SYSTEM_GENERATED",
+      "dependencies": [],
+      "cryptographic": {
+        "hash": "5c2cd64f05b1375c8069f977d331b83768352bebb65d7c811dd841b2093f1b7e",
+        "signature": "SYSTEM_SIGNED"
+      },
+      "blockchainMetadata": {
+        "addedAt": "2025-07-13T07:56:58.470Z",
+        "status": "PENDING_MINING"
+      }
+    },
+    {
+      "artifactType": "CASE_REGISTRATION",
+      "chittyChainId": "CC:2025:EVICTION:TYLER_V_LANDLORD:b8f50b12",
+      "courtCaseNumber": "PENDING",
+      "metadata": {
+        "parties": [
+          "Tyler",
+          "Landlord"
+        ],
+        "caseType": "eviction",
+        "description": "Tyler eviction case",
+        "filingDate": "2025-07-13T08:04:22.688Z",
+        "jurisdiction": "ILLINOIS-COOK",
+        "status": "ACTIVE",
+        "createdAt": "2025-07-13T08:04:22.688Z",
+        "createdBy": "chittyprose",
+        "systems": {
+          "chittyprose": true,
+          "chittycases": false,
+          "chittychain": true
+        }
+      },
+      "trustLevel": "SYSTEM_GENERATED",
+      "dependencies": [],
+      "cryptographic": {
+        "hash": "5c2cd64f05b1375c8069f977d331b83768352bebb65d7c811dd841b2093f1b7e",
+        "signature": "SYSTEM_SIGNED"
+      },
+      "blockchainMetadata": {
+        "addedAt": "2025-07-13T08:04:22.689Z",
+        "status": "PENDING_MINING"
+      }
+    }
+  ]
+}

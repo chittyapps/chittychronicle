@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChittyID Partners & Integration</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spark-shield.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dynamic-spark-logo.css') }}">
+    
+    <style>
+        /* Fix global text visibility */
+        body.bg-chitty-dark {
+            background-color: #0f1419 !important;
+        }
+        
+        .container h2,
+        .container h4,
+        .container p,
+        .container li,
+        .lead {
+            color: #ffffff !important;
+        }
+        
+        .text-muted {
+            color: #d1d5db !important;
+        }
+        
+        small.text-muted {
+            color: #9ca3af !important;
+        }
+        
+        /* Fix button and input readability */
+        .btn {
+            font-weight: 600 !important;
+        }
+        
+        .btn-chitty-blue {
+            background: linear-gradient(45deg, #0088ff, #0066cc) !important;
+            border: none !important;
+            color: #ffffff !important;
+        }
+        
+        .btn-chitty-green {
+            background: linear-gradient(45deg, #00ff88, #00cc66) !important;
+            border: none !important;
+            color: #000000 !important;
+        }
+        
+        .btn-outline-warning {
+            border: 2px solid #F59E0B !important;
+            color: #F59E0B !important;
+        }
+        
+        .btn-outline-warning:hover {
+            background: #F59E0B !important;
+            color: #000000 !important;
+        }
+        
+        /* Improve code snippet visibility */
+        .code-snippet {
+            background: #000000 !important;
+            border: 1px solid #30363d !important;
+        }
+        
+        .code-snippet pre {
+            color: #e6edf3 !important;
+        }
+        
+        /* Fix onboarding step visibility */
+        .onboarding-step {
+            background: rgba(26, 26, 46, 0.9) !important;
+            color: #ffffff !important;
+        }
+        
+        .onboarding-step h5,
+        .onboarding-step p,
+        .onboarding-step li {
+            color: #ffffff !important;
+        }
+        
+        .partner-tier-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            color: #ffffff !important;
+        }
+        
+        .partner-tier-card .text-muted {
+            color: #d1d5db !important;
+        }
+        
+        .partner-tier-card li {
+            color: #ffffff !important;
+        }
+        
+        .partner-tier-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.8s;
+        }
+        
+        .partner-tier-card:hover::before {
+            left: 100%;
+        }
+        
+        .tier-starter { border-color: #F59E0B; }
+        .tier-professional { border-color: #0088ff; }
+        .tier-enterprise { border-color: #00ff88; }
+        
+        .tier-starter:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(245, 158, 11, 0.3); }
+        .tier-professional:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 136, 255, 0.3); }
+        .tier-enterprise:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 255, 136, 0.3); }
+        
+        .tier-price {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tier-starter .tier-price { color: #F59E0B; }
+        .tier-professional .tier-price { color: #0088ff; }
+        .tier-enterprise .tier-price { color: #00ff88; }
+        
+        .code-snippet {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .code-snippet pre {
+            margin: 0;
+            color: #c9d1d9;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #f0f6fc;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .copy-button:hover {
+            background: #30363d;
+            border-color: #8b949e;
+        }
+        
+        .integration-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid #0088ff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            color: #ffffff !important;
+        }
+        
+        .integration-card h5,
+        .integration-card p,
+        .integration-card li,
+        .integration-card .text-muted {
+            color: #ffffff !important;
+        }
+        
+        .integration-card .lead {
+            color: #d1d5db !important;
+        }
+        
+        .integration-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 136, 255, 0.2);
+            border-color: #00ff88;
+        }
+        
+        .sdk-language {
+            display: inline-block;
+            background: linear-gradient(45deg, #0088ff, #00ff88);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .onboarding-step {
+            background: rgba(26, 26, 46, 0.8);
+            border: 1px solid #0088ff;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -1rem;
+            left: 2rem;
+            background: linear-gradient(45deg, #0088ff, #00ff88);
+            color: white;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+        
+        .api-endpoint {
+            background: #1a1a2e;
+            border: 1px solid #0088ff;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+            color: #ffffff !important;
+        }
+        
+        .api-endpoint span {
+            color: #ffffff !important;
+        }
+        
+        .http-method {
+            background: #00ff88;
+            color: #000;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 700;
+            font-size: 0.75rem;
+            min-width: 4rem;
+            text-align: center;
+        }
+        
+        .http-method.post { background: #F59E0B; }
+        .http-method.put { background: #3B82F6; }
+        .http-method.delete { background: #EF4444; }
+    </style>
+</head>
+<body class="bg-chitty-dark text-white">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-chitty-darker border-bottom border-chitty-blue">
+        <div class="container">
+            <a class="chitty-dynamic-logo" href="/">
+                <div class="dynamic-spark-container">
+                    <i data-feather="shield" class="dynamic-spark-shield"></i>
+                    <div class="dynamic-lightning-spark">
+                        <svg width="12" height="16" viewBox="0 0 16 20" class="dynamic-spark-svg">
+                            <path 
+                                d="M8 2 L6.5 9 L9.5 9 L7 18 L11 11 L8.5 11 Z" 
+                                fill="url(#logoSparkGradient)" 
+                                class="lightning-bolt"
+                            />
+                            <defs>
+                                <linearGradient id="logoSparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#F59E0B" />
+                                    <stop offset="100%" stop-color="#EF4444" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                </div>
+                <span class="navbar-brand-text ms-3">ChittyID Partners</span>
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Trust Engine</a>
+                <a class="nav-link" href="/marketplace">Marketplace</a>
+                <a class="nav-link active" href="/partners">Partners</a>
+                <a class="nav-link" href="/onboarding">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="container-fluid py-5" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%);">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-4">
+                Partner with <span class="text-chitty-green">ChittyID</span>
+            </h1>
+            <p class="lead mb-5">
+                Integrate revolutionary 6D trust scoring into your platform with our flexible partnership tiers and comprehensive SDK
+            </p>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-center gap-3 mb-4">
+                        <div class="sdk-language">JavaScript</div>
+                        <div class="sdk-language">Python</div>
+                        <div class="sdk-language">React</div>
+                        <div class="sdk-language">REST API</div>
+                        <div class="sdk-language">GraphQL</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partnership Tiers -->
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="h1 fw-bold text-chitty-green mb-3">Partnership Tiers</h2>
+            <p class="lead">Choose the partnership level that fits your scale and requirements</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="partner-tier-card tier-starter">
+                    <div class="tier-price">$99</div>
+                    <div class="h4 mb-3">Starter</div>
+                    <div class="text-muted mb-4">Perfect for small platforms and startups</div>
+                    
+                    <ul class="list-unstyled text-start">
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>10,000 verifications/month</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Basic API access</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Standard support</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Trust score widgets</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Basic analytics</li>
+                    </ul>
+                    
+                    <button class="btn btn-outline-warning btn-lg w-100 mt-4">
+                        Start Free Trial
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="partner-tier-card tier-professional">
+                    <div class="tier-price">$499</div>
+                    <div class="h4 mb-3">Professional</div>
+                    <div class="text-muted mb-4">For growing platforms with advanced needs</div>
+                    
+                    <ul class="list-unstyled text-start">
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-blue me-2"></i>100,000 verifications/month</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-blue me-2"></i>Full API & GraphQL access</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-blue me-2"></i>Priority support</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-blue me-2"></i>Custom trust scoring</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-blue me-2"></i>Advanced analytics</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-blue me-2"></i>White-label options</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-blue me-2"></i>Webhooks & real-time</li>
+                    </ul>
+                    
+                    <button class="btn btn-chitty-blue btn-lg w-100 mt-4">
+                        Contact Sales
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="partner-tier-card tier-enterprise">
+                    <div class="tier-price">Custom</div>
+                    <div class="h4 mb-3">Enterprise</div>
+                    <div class="text-muted mb-4">For large-scale platforms and enterprises</div>
+                    
+                    <ul class="list-unstyled text-start">
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Unlimited verifications</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Private cloud deployment</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>24/7 dedicated support</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Custom integrations</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>AI-powered insights</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Compliance packages</li>
+                        <li class="mb-2"><i data-feather="check" class="text-chitty-green me-2"></i>Revenue sharing options</li>
+                    </ul>
+                    
+                    <button class="btn btn-chitty-green btn-lg w-100 mt-4">
+                        Schedule Demo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Reference -->
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="h1 fw-bold text-chitty-blue mb-3">API Reference</h2>
+            <p class="lead">RESTful API for seamless ChittyID integration</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-6">
+                <h4 class="text-chitty-green mb-4">Core Endpoints</h4>
+                
+                <div class="api-endpoint">
+                    <span class="http-method">GET</span>
+                    <span>/api/trust/{user_id}</span>
+                </div>
+                <small class="text-muted">Get comprehensive trust score for a user</small>
+                
+                <div class="api-endpoint">
+                    <span class="http-method post">POST</span>
+                    <span>/api/verification/request</span>
+                </div>
+                <small class="text-muted">Create new verification request</small>
+                
+                <div class="api-endpoint">
+                    <span class="http-method">GET</span>
+                    <span>/api/trust/history/{user_id}</span>
+                </div>
+                <small class="text-muted">Get historical trust data with trends</small>
+                
+                <div class="api-endpoint">
+                    <span class="http-method post">POST</span>
+                    <span>/api/events/record</span>
+                </div>
+                <small class="text-muted">Record trust-affecting events</small>
+            </div>
+            
+            <div class="col-lg-6">
+                <h4 class="text-chitty-green mb-4">Marketplace Endpoints</h4>
+                
+                <div class="api-endpoint">
+                    <span class="http-method">GET</span>
+                    <span>/api/marketplace/requests</span>
+                </div>
+                <small class="text-muted">List available verification requests</small>
+                
+                <div class="api-endpoint">
+                    <span class="http-method post">POST</span>
+                    <span>/api/marketplace/claim/{id}</span>
+                </div>
+                <small class="text-muted">Claim verification request</small>
+                
+                <div class="api-endpoint">
+                    <span class="http-method put">PUT</span>
+                    <span>/api/verification/complete/{id}</span>
+                </div>
+                <small class="text-muted">Complete verification with results</small>
+                
+                <div class="api-endpoint">
+                    <span class="http-method">GET</span>
+                    <span>/api/verifiers/profiles</span>
+                </div>
+                <small class="text-muted">Get available verifier profiles</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Code Examples -->
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="h1 fw-bold text-chitty-blue mb-3">Integration Examples</h2>
+            <p class="lead">Quick-start code snippets for popular frameworks</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="integration-card">
+                    <h5 class="text-chitty-green mb-3">
+                        <i data-feather="code" class="me-2"></i>
+                        JavaScript SDK
+                    </h5>
+                    
+                    <div class="code-snippet">
+                        <button class="copy-button" onclick="copyCode('js-code')">Copy</button>
+                        <pre id="js-code">// Install: npm install @chitty/trust-sdk
+import { ChittyTrust } from '@chitty/trust-sdk';
+
+const chitty = new ChittyTrust({
+  apiKey: 'your-api-key',
+  environment: 'production'
+});
+
+// Get user trust score
+const trustScore = await chitty.getTrustScore('user123');
+console.log(trustScore.composite); // 78.5
+
+// Create verification request
+const request = await chitty.createVerification({
+  type: 'identity',
+  title: 'Verify government ID',
+  reward: 25.00
+});</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="integration-card">
+                    <h5 class="text-chitty-green mb-3">
+                        <i data-feather="code" class="me-2"></i>
+                        Python SDK
+                    </h5>
+                    
+                    <div class="code-snippet">
+                        <button class="copy-button" onclick="copyCode('python-code')">Copy</button>
+                        <pre id="python-code"># Install: pip install chitty-trust
+from chitty_trust import ChittyClient
+
+client = ChittyClient(
+    api_key="your-api-key",
+    environment="production"
+)
+
+# Get trust score with history
+trust_data = client.get_trust_score(
+    user_id="user123",
+    include_history=True,
+    days_back=30
+)
+
+print(f"Trust Score: {trust_data.composite}")
+print(f"Trend: {trust_data.trends.change}%")</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="integration-card">
+                    <h5 class="text-chitty-green mb-3">
+                        <i data-feather="code" class="me-2"></i>
+                        React Component
+                    </h5>
+                    
+                    <div class="code-snippet">
+                        <button class="copy-button" onclick="copyCode('react-code')">Copy</button>
+                        <pre id="react-code">import { ChittyTrustWidget } from '@chitty/react-components';
+
+function UserProfile({ userId }) {
+  return (
+    &lt;div&gt;
+      &lt;ChittyTrustWidget
+        userId={userId}
+        showHistory={true}
+        theme="dark"
+        onScoreUpdate={(score) =&gt; {
+          console.log('Trust score updated:', score);
+        }}
+      /&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="integration-card">
+                    <h5 class="text-chitty-green mb-3">
+                        <i data-feather="code" class="me-2"></i>
+                        cURL Example
+                    </h5>
+                    
+                    <div class="code-snippet">
+                        <button class="copy-button" onclick="copyCode('curl-code')">Copy</button>
+                        <pre id="curl-code"># Get trust score
+curl -X GET \
+  "https://api.chittyid.com/v1/trust/user123" \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json"
+
+# Create verification request
+curl -X POST \
+  "https://api.chittyid.com/v1/verification/request" \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "identity",
+    "title": "Verify government ID",
+    "reward": 25.00
+  }'</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Webhooks -->
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="h1 fw-bold text-chitty-green mb-3">Real-time Updates</h2>
+            <p class="lead">Stay synchronized with webhook notifications</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="integration-card">
+                    <h5 class="text-chitty-blue mb-3">Webhook Events</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><code>trust.score_updated</code> - Trust score changed</li>
+                        <li class="mb-2"><code>verification.completed</code> - Verification finished</li>
+                        <li class="mb-2"><code>verification.claimed</code> - Request claimed by verifier</li>
+                        <li class="mb-2"><code>user.level_changed</code> - Trust level upgraded/downgraded</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="integration-card">
+                    <h5 class="text-chitty-blue mb-3">Webhook Payload</h5>
+                    <div class="code-snippet">
+                        <pre>{
+  "event": "trust.score_updated",
+  "user_id": "user123",
+  "timestamp": "2025-07-31T10:30:00Z",
+  "data": {
+    "old_score": 72.3,
+    "new_score": 78.5,
+    "trigger": "verification_completed",
+    "dimensions": { ... }
+  }
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/dynamic-spark.js') }}"></script>
+    
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Initialize dynamic spark system
+        if (window.dynamicSparkSystem) {
+            window.dynamicSparkSystem.initializeSparkElements();
+        }
+        
+        // Copy code functionality
+        function copyCode(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

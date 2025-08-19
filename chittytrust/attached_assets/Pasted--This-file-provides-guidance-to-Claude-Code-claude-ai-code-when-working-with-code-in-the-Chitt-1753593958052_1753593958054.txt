@@ -1,0 +1,344 @@
+     This file provides guidance to Claude Code (claude.ai/code) when working with code in the ChittyChain repository.
+
+     ## Overview
+
+     ChittyChain is a comprehensive legal evidence management system that combines blockchain technology with Notion integration to provide legal-grade evidence tracking,
+     AI-powered contradiction detection, and universal ChittyID assignment for cross-platform integration.
+
+     ## Architecture
+
+     ### Core Components
+     - **Evidence Ledger Schema**: 10 interconnected Notion databases with PostgreSQL backup
+     - **MCP Server** (`mcp-server.js`): 22+ tools for evidence and blockchain operations
+     - **Notion Integration**: Database creation, schema management, and evidence processing
+     - **Timeline Validator**: Chronological error detection for legal proceedings
+     - **Baseline Templates**: Evidence tier evaluation system
+
+     ### Database Schema (10 Databases)
+     1. **Master Evidence** - Primary evidence registry (CHITTY-EVD-*)
+     2. **Atomic Facts** - Extracted facts with credibility (CHITTY-FACT-*)
+     3. **Cases** - Legal case management (CHITTY-CASE-*)
+     4. **Users** - User management with roles (CHITTY-USER-*)
+     5. **Chain of Custody** - Transfer tracking (CHITTY-CUSTODY-*)
+     6. **Contradiction Tracking** - AI conflict detection (CHITTY-CONFLICT-*)
+     7. **Audit Trail** - Operation logging (CHITTY-AUDIT-*)
+     8. **Property Portfolio** - Dynamic property refs (CHITTY-PROP-*)
+     9. **Case Timeline** - Event tracking (CHITTY-EVENT-*)
+     10. **Document Tracker** - Document management (CHITTY-DOC-*)
+
+     ## Essential Commands
+
+     ### Evidence Management
+     ```bash
+     npm run evidence:page         # Generate evidence pages with fact drill-down
+     npm run baseline:template     # Create baseline evidence templates
+     npm run baseline:evaluate     # Evaluate evidence against baselines
+     npm run timeline:validate     # Validate chronological order
+     npm run notion:lock           # Lock evidence with @nevershitty bot analysis
+     ```
+
+     ### Schema Management
+     ```bash
+     npm run notion:create-databases  # Create all 10 Notion databases
+     npm run schema:check            # Check schema version status
+     npm run schema:migrate          # Apply pending migrations
+     npm run schema:hot-sync         # Hot-sync schemas via MCP
+     npm run mcp:sync               # Sync to specific environment
+     ```
+
+     ### MCP Server Operations
+     ```bash
+     npm run mcp                   # Start MCP server (22+ tools)
+     npm run mcp:http              # HTTP variant for web integration
+     npm run mcp:check             # Check all environment versions
+     npm run mcp:tools             # List available MCP tools
+     ```
+
+     ### Legal Assistant Integration
+     ```bash
+     npm run legal:analyze         # Analyze evidence with AI
+     npm run legal:deadlines       # Check case deadlines
+     npm run legal:tro             # TRO analysis
+     npm run legal:strategy        # Pro se strategy recommendations
+     npm run legal:crossref        # Cross-reference evidence
+     ```
+
+     ### Demonstration Scripts
+     ```bash
+     npm run demo:ownership        # Standard ownership claim demo
+     npm run demo:low-weight       # Low-weight evidence processing
+     ```
+
+     ## Evidence Tier System
+
+     ### Weight Hierarchy (0.0 - 1.0)
+     - **SELF_AUTHENTICATING** (1.0): Court orders, sealed documents
+     - **GOVERNMENT** (0.95): Deeds, permits, official records
+     - **FINANCIAL_INSTITUTION** (0.90): Bank statements, certified records
+     - **INDEPENDENT_THIRD_PARTY** (0.85): Expert reports, neutral parties
+     - **BUSINESS_RECORDS** (0.80): Corporate documents, business duty
+     - **FIRST_PARTY_ADVERSE** (0.75): Admissions against interest
+     - **FIRST_PARTY_FRIENDLY** (0.60): Self-serving statements
+     - **UNCORROBORATED_PERSON** (0.40): Individual testimony
+
+     ### Baseline Template Types
+     1. **GOVERNMENT**: Official documents requiring authentication
+     2. **FINANCIAL**: Banking and payment records
+     3. **CONTRACTUAL**: Signed agreements and amendments
+     4. **COMMUNICATION**: Emails, texts, recordings
+     5. **WITNESS**: Testimonies and affidavits
+
+     ## Universal ChittyID System
+
+     Every entity receives a ChittyID regardless of weight or importance:
+     - Format: `CHITTY-{TYPE}-{UUID}`
+     - No weight thresholds for ID assignment
+     - Enables cross-platform integration
+     - Formula-based generation in Notion
+
+     ## MCP Tools (22 Available)
+
+     ### Evidence Ledger Tools (7)
+     - `chittychain_create_evidence` - Create evidence with auto weight
+     - `chittychain_add_atomic_fact` - Extract facts with credibility
+     - `chittychain_detect_contradictions` - AI-powered conflict detection
+     - `chittychain_resolve_contradiction` - Legal precedence resolution
+     - `chittychain_chain_of_custody` - Track evidence transfers
+     - `chittychain_evidence_dashboard` - Case analysis dashboard
+     - `chittychain_audit_report` - Court-ready audit trails
+
+     ### Blockchain Operations (15)
+     - `chittychain_mine_block` - Mine pending artifacts
+     - `chittychain_validate_chain` - Validate integrity
+     - `chittychain_verified_mint` - Legal-grade minting
+     - `chittychain_trust_analysis` - Evidence scoring
+     - `chittychain_verify_only` - Verify without minting
+     - Plus backup, recovery, query, and export tools
+
+     ## Timeline Validation
+
+     Detects critical chronological errors:
+     - Response filed before service completed
+     - Evidence dated after case filing
+     - Contradictory sequence ordering
+     - Missing prerequisite events
+
+     ```javascript
+     // Example usage
+     const validator = new TimelineValidator();
+     const errors = await validator.validateCaseTimeline('CASE-2024-001');
+     ```
+
+     ## Multi-Environment Support
+
+     ### Environment Configuration
+     - **Development**: `DEV_` prefix, full testing
+     - **Staging**: `STAGING_` prefix, production simulation
+     - **Production**: `PROD_` prefix, live processing
+
+     ### Schema Version Management
+     - Version tracking across environments
+     - Hot-sync capabilities via MCP
+     - CI/CD pipeline for automated deployment
+     - Rollback support for emergencies
+
+     ## Integration Patterns
+
+     ### Notion Database Creation
+     ```javascript
+     // Two-pass creation for complex relations
+     await creator.createDatabases(); // First pass: basic structure
+     await creator.updateRelations(); // Second pass: relationships
+     ```
+
+     ### Evidence Processing Flow
+     1. Create in Master Evidence → Assign CHITTY-EVD-*
+     2. Extract Atomic Facts → Assign CHITTY-FACT-*
+     3. Evaluate against Baseline Templates
+     4. Validate Timeline Consistency
+     5. Check for Contradictions
+     6. Update Chain of Custody
+
+     ### MCP Tool Usage
+     ```javascript
+     // Example: Create evidence with automatic weight
+     const result = await mcp.callTool('chittychain_create_evidence', {
+       title: 'Property Deed',
+       content: 'Official deed document...',
+       tier: 'GOVERNMENT',
+       caseId: 'CASE-2024-001'
+     });
+     ```
+
+     ## Database Patterns
+
+     ### PostgreSQL Schema
+     ```sql
+     -- Evidence weight calculation
+     CREATE OR REPLACE FUNCTION calculate_evidence_weight(tier TEXT)
+     RETURNS DECIMAL AS $$
+     BEGIN
+       CASE tier
+         WHEN 'SELF_AUTHENTICATING' THEN RETURN 1.00;
+         WHEN 'GOVERNMENT' THEN RETURN 0.95;
+         -- ... etc
+       END CASE;
+     END;
+     $$ LANGUAGE plpgsql;
+     ```
+
+     ### Notion Formula Fields
+     ```javascript
+     // ChittyID generation formula
+     prop("Type") + "-" + prop("UUID")
+     ```
+
+     ## Testing & Validation
+
+     ### Run Validation Suite
+     ```bash
+     npm test                      # Run all tests
+     npm run validate              # Validate blockchain integrity
+     npm run timeline:validate     # Check chronological consistency
+     ```
+
+     ### Key Test Areas
+     - Evidence weight calculation accuracy
+     - ChittyID generation consistency
+     - Timeline contradiction detection
+     - Chain of custody integrity
+     - Cross-reference validation
+
+     ## Security Considerations
+
+     ### Attorney-Client Privilege
+     - Automatic detection in document content
+     - Restricted cross-executive sharing
+     - Complete audit trail for privileged content
+     - Role-based access control (RBAC)
+
+     ### Evidence Integrity
+     - Blockchain verification for critical evidence
+     - Immutable chain of custody
+     - Cryptographic hashing for all artifacts
+     - Multi-signature support for high-value items
+
+     ## Performance Optimization
+
+     ### Notion API Limits
+     - Batch operations for bulk processing
+     - Rate limiting with exponential backoff
+     - Cached relation lookups
+     - Formula-based ID generation (no API calls)
+
+     ### Blockchain Performance
+     - Merkle tree optimization
+     - Efficient mining algorithms
+     - Selective artifact inclusion
+     - Background validation processes
+
+     ## Common Troubleshooting
+
+     ### Schema Sync Issues
+     ```bash
+     # Force schema update
+     npm run schema:migrate -- --force
+
+     # Check version mismatch
+     npm run mcp:check
+
+     # Manual sync to specific env
+     npm run mcp:sync development
+     ```
+
+     ### Evidence Processing Errors
+     ```bash
+     # Validate evidence tier
+     npm run baseline:evaluate -- --evidence-id EVD-123
+
+     # Check for contradictions
+     npm run timeline:validate -- --case-id CASE-2024-001
+
+     # Regenerate ChittyIDs
+     npm run migrate -- --regenerate-ids
+     ```
+
+     ### MCP Connection Issues
+     ```bash
+     # Test MCP server
+     npm run mcp:tools
+
+     # Check server logs
+     tail -f chain.log
+
+     # Restart with debug mode
+     DEBUG=* npm run mcp
+     ```
+
+     ## Development Workflow
+
+     ### Adding New Evidence Types
+     1. Update `DATABASE_SCHEMAS` in `notion-database-creator.js`
+     2. Add tier to `EVIDENCE_TIERS` in `evidence-baseline-templates.js`
+     3. Create migration in `schema-version-manager.js`
+     4. Update TypeScript types in `types/evidence-ledger.ts`
+     5. Test with `npm run demo:ownership`
+
+     ### Creating New MCP Tools
+     1. Add tool definition to `mcp-server.js`
+     2. Implement handler function
+     3. Update tool count in documentation
+     4. Test with MCP inspector
+     5. Document in `chittyos-mcp-tools.json`
+
+     ### Schema Changes
+     1. Increment `CURRENT_SCHEMA_VERSION`
+     2. Add migration function if breaking change
+     3. Update `SCHEMA_CHANGELOG.md`
+     4. Test migration path
+     5. Deploy through CI/CD pipeline
+
+     ## Important Principles
+
+     ### Universal ChittyID Assignment
+     - Every entity gets an ID, no exceptions
+     - Weight affects filtering, not ID assignment
+     - IDs enable ecosystem-wide integration
+     - Formula-based for performance
+
+     ### Evidence Tier Integrity
+     - Tiers determine initial weight
+     - Baseline templates can elevate evidence
+     - AI verification can adjust weights
+     - Court standards drive tier definitions
+
+     ### Chronological Consistency
+     - Timeline validation is critical for legal validity
+     - Prerequisite events must precede dependent events
+     - Service must complete before responses
+     - All dates must be internally consistent
+
+     ### Multi-Environment Architecture
+     - Development → Staging → Production flow
+     - Hot-sync enables rapid iteration
+     - Version control prevents drift
+     - Rollback capability for safety
+
+23:59
+
+⏺ I've created a comprehensive ChittyChain-specific CLAUDE.md file (saved as CLAUDE_CHITTYCHAIN.md to differentiate it from the general repository CLAUDE.md). This file focuses
+   specifically on:
+
+  1. ChittyChain Architecture - The 10-database Evidence Ledger system with Notion integration
+  2. Essential Commands - All the key npm scripts for evidence management, schema operations, and MCP tools
+  3. Evidence Tier System - The 8-tier weight hierarchy from SELF_AUTHENTICATING (1.0) to UNCORROBORATED_PERSON (0.40)
+  4. Universal ChittyID System - How every entity gets an ID regardless of weight
+  5. MCP Tools - Documentation of the 22+ available tools
+  6. Timeline Validation - Critical for legal proceedings
+  7. Multi-Environment Support - Dev/Staging/Production architecture
+  8. Integration Patterns - How to work with Notion and PostgreSQL
+  9. Security & Performance - Attorney-client privilege, evidence integrity, API optimization
+  10. Development Workflow - How to add new evidence types, MCP tools, and schema changes
+
+  The file is tailored specifically to ChittyChain's legal evidence blockchain system, avoiding duplication with the general repository documentation while providing deep
+  insight into the unique aspects that require understanding multiple files to grasp.

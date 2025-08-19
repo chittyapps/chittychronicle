@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChittyTrust - 6D Trust Scoring System</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chitty.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spark-shield.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/persona-cards.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dynamic-spark-logo.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced-ui.css') }}">
+    
+    <!-- Dynamic Spark System -->
+    <script src="{{ url_for('static', filename='js/dynamic-spark.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/enhanced-interactions.js') }}"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-chitty-dark fixed-top">
+        <div class="container">
+            <a class="chitty-dynamic-logo" href="#">
+                <div class="dynamic-spark-container">
+                    <i data-feather="shield" class="dynamic-spark-shield"></i>
+                    <div class="dynamic-lightning-spark">
+                        <svg width="12" height="16" viewBox="0 0 16 20" class="dynamic-spark-svg">
+                            <path 
+                                d="M8 2 L6.5 9 L9.5 9 L7 18 L11 11 L8.5 11 Z" 
+                                fill="url(#logoSparkGradient)" 
+                                class="lightning-bolt"
+                            />
+                            <defs>
+                                <linearGradient id="logoSparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#F59E0B" />
+                                    <stop offset="100%" stop-color="#EF4444" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                </div>
+                <span class="chitty-brand-text">ChittyTrust</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="nav-link text-chitty-blue">6D Trust Revolution</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-100 pt-5">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold text-white mb-4">
+                        The 6D Trust<br>
+                        <span class="text-chitty-green">Revolution</span>
+                    </h1>
+                    <p class="lead text-light mb-4">
+                        Beyond credit scores. Beyond binary trust. ChittyTrust measures what matters: 
+                        <strong>Source, Time, Channel, Outcomes, Network, and Justice</strong>.
+                    </p>
+                    <div class="d-flex gap-3 mb-4">
+                        <div class="trust-stat">
+                            <div class="h2 text-chitty-green mb-0">6</div>
+                            <small class="text-muted">Dimensions</small>
+                        </div>
+                        <div class="trust-stat">
+                            <div class="h2 text-chitty-blue mb-0">4</div>
+                            <small class="text-muted">Output Scores</small>
+                        </div>
+                        <div class="trust-stat">
+                            <div class="h2 text-white mb-0">∞</div>
+                            <small class="text-muted">Possibilities</small>
+                        </div>
+                    </div>
+                    <button class="btn btn-chitty-primary btn-lg" onclick="scrollToDemo()">
+                        <i data-feather="activity" class="me-2"></i>
+                        Experience ChittyTrust
+                    </button>
+                </div>
+                <div class="col-lg-6">
+                    <div class="trust-preview-card">
+                        <div class="card bg-dark border-chitty-blue">
+                            <div class="card-body">
+                                <h5 class="card-title text-chitty-green">Trust Preview</h5>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <div class="dimension-preview">
+                                            <small class="text-muted">Source</small>
+                                            <div class="progress-sm">
+                                                <div class="progress-bar bg-chitty-blue" style="width: 85%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="dimension-preview">
+                                            <small class="text-muted">Justice</small>
+                                            <div class="progress-sm">
+                                                <div class="progress-bar bg-chitty-green" style="width: 92%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="dimension-preview">
+                                            <small class="text-muted">Network</small>
+                                            <div class="progress-sm">
+                                                <div class="progress-bar bg-chitty-blue" style="width: 78%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="dimension-preview">
+                                            <small class="text-muted">Outcomes</small>
+                                            <div class="progress-sm">
+                                                <div class="progress-bar bg-chitty-green" style="width: 88%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Dashboard -->
+    <section id="trust-dashboard" class="py-5 bg-chitty-darker">
+        <div class="container">
+            <!-- Persona Selector -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h2 class="text-center text-white mb-4">
+                        <i data-feather="users" class="me-2"></i>
+                        Choose a Persona to Analyze
+                    </h2>
+                    <div class="persona-selector" id="persona-selector">
+                        <div class="row g-4 justify-content-center">
+                            <div class="col-lg-4 col-md-6">
+                                <div class="persona-card-enhanced glass-card" data-persona="alice">
+                                    <div class="persona-avatar-enhanced float-animation">
+                                        👩‍💼
+                                    </div>
+                                    <h4 class="text-white mb-2">Alice Community</h4>
+                                    <p class="text-muted mb-3">High-trust community leader with strong justice focus</p>
+                                    <div class="persona-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-value text-chitty-green">89%</span>
+                                            <span class="stat-label">Trust Level</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value text-chitty-blue">L4</span>
+                                            <span class="stat-label">Verification</span>
+                                        </div>
+                                    </div>
+                                    <div class="persona-badge">
+                                        <i data-feather="award" class="me-1"></i>
+                                        Community Leader
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="persona-card-enhanced glass-card" data-persona="bob">
+                                    <div class="persona-avatar-enhanced float-animation" style="animation-delay: 0.5s">
+                                        👨‍💼
+                                    </div>
+                                    <h4 class="text-white mb-2">Bob Business</h4>
+                                    <p class="text-muted mb-3">Mixed business history with dispute resolution experience</p>
+                                    <div class="persona-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-value text-chitty-blue">72%</span>
+                                            <span class="stat-label">Trust Level</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value text-warning">L3</span>
+                                            <span class="stat-label">Verification</span>
+                                        </div>
+                                    </div>
+                                    <div class="persona-badge">
+                                        <i data-feather="briefcase" class="me-1"></i>
+                                        Business Owner
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="persona-card-enhanced glass-card" data-persona="charlie">
+                                    <div class="persona-avatar-enhanced float-animation" style="animation-delay: 1s">
+                                        🔄
+                                    </div>
+                                    <h4 class="text-white mb-2">Charlie Changed</h4>
+                                    <p class="text-muted mb-3">Transformation story - "Shitty to Chitty" journey</p>
+                                    <div class="persona-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-value text-success">76%</span>
+                                            <span class="stat-label">Trust Level</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value text-chitty-green">L4</span>
+                                            <span class="stat-label">Verification</span>
+                                        </div>
+                                    </div>
+                                    <div class="persona-badge">
+                                        <i data-feather="trending-up" class="me-1"></i>
+                                        Reformed Individual
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trust Analysis -->
+            <div class="row" id="trust-analysis" style="display: none;">
+                <!-- Enhanced Trust Score Display -->
+                <div class="col-lg-5 mb-4">
+                    <div class="glass-card chart-container-enhanced">
+                        <div class="chart-title-enhanced">
+                            <i data-feather="target" class="me-2"></i>
+                            6D Trust Analysis
+                        </div>
+                        <div class="trust-score-display text-center mb-4">
+                            <!-- Enhanced trust ring will be created here -->
+                        </div>
+                        <div style="position: relative; height: 300px;">
+                            <canvas id="trustRadarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Interactive Dashboard Metrics -->
+                <div class="col-lg-7">
+                    <div class="dashboard-grid">
+                        <div class="dashboard-metric neuro-card micro-bounce">
+                            <div class="metric-icon">
+                                <i data-feather="star"></i>
+                            </div>
+                            <div class="metric-value" id="composite-score">--</div>
+                            <div class="metric-label">Composite Score</div>
+                        </div>
+                        
+                        <div class="dashboard-metric neuro-card micro-bounce" style="animation-delay: 0.1s">
+                            <div class="metric-icon">
+                                <i data-feather="heart"></i>
+                            </div>
+                            <div class="metric-value" id="people-score">--</div>
+                            <div class="metric-label">People's Score</div>
+                        </div>
+                        
+                        <div class="dashboard-metric neuro-card micro-bounce" style="animation-delay: 0.2s">
+                            <div class="metric-icon">
+                                <i data-feather="file-text"></i>
+                            </div>
+                            <div class="metric-value" id="legal-score">--</div>
+                            <div class="metric-label">Legal Score</div>
+                        </div>
+                        
+                        <div class="dashboard-metric neuro-card micro-bounce" style="animation-delay: 0.3s">
+                            <div class="metric-icon">
+                                <i data-feather="shield"></i>
+                            </div>
+                            <div class="metric-value" id="state-score">--</div>
+                            <div class="metric-label">State Score</div>
+                        </div>
+                        
+                        <div class="dashboard-metric neuro-card micro-bounce" style="animation-delay: 0.4s">
+                            <div class="metric-icon" style="background: linear-gradient(45deg, #00ff88, #0088ff);">
+                                <i data-feather="zap"></i>
+                            </div>
+                            <div class="metric-value text-chitty-green" id="chitty-score">--</div>
+                            <div class="metric-label">Chitty Score™</div>
+                        </div>
+                        
+                        <div class="dashboard-metric neuro-card micro-bounce" style="animation-delay: 0.5s">
+                            <div class="metric-icon">
+                                <i data-feather="trending-up"></i>
+                            </div>
+                            <div class="metric-value" id="trust-level">--</div>
+                            <div class="metric-label">Trust Level</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Trust Scores -->
+                <div class="col-lg-6">
+                    <div class="row g-3">
+                        <!-- Composite Score -->
+                        <div class="col-12">
+                            <div class="card bg-dark border-chitty-green">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-2">Composite Trust Score</h6>
+                                    <div class="display-4 text-chitty-green mb-2" id="composite-score">--</div>
+                                    <div class="chitty-level-badge" id="chitty-level">
+                                        <div class="shield-spark spark-over trust-level-L4">
+                                            <i data-feather="shield" class="text-chitty-green"></i>
+                                            <span class="spark"></span>
+                                        </div>
+                                        <span>Calculating...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output Scores -->
+                        <div class="col-6">
+                            <div class="trust-score-card people-score">
+                                <div class="card bg-dark border-secondary position-relative">
+                                    <div class="shield-spark spark-inside trust-level-L3">
+                                        <span class="spark"></span>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <i data-feather="heart" class="mb-2 text-danger"></i>
+                                        <h6 class="text-muted mb-1">People's Score</h6>
+                                        <div class="h3 mb-0" id="people-score">--</div>
+                                        <small class="text-muted">Community Impact</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="trust-score-card legal-score">
+                                <div class="card bg-dark border-secondary">
+                                    <div class="card-body text-center">
+                                        <i data-feather="file-text" class="mb-2 text-warning"></i>
+                                        <h6 class="text-muted mb-1">Legal Score</h6>
+                                        <div class="h3 mb-0" id="legal-score">--</div>
+                                        <small class="text-muted">Compliance</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="trust-score-card state-score">
+                                <div class="card bg-dark border-secondary">
+                                    <div class="card-body text-center">
+                                        <i data-feather="shield" class="mb-2 text-info"></i>
+                                        <h6 class="text-muted mb-1">State Score</h6>
+                                        <div class="h3 mb-0" id="state-score">--</div>
+                                        <small class="text-muted">Authority</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="trust-score-card chitty-score">
+                                <div class="card bg-dark border-chitty-green position-relative">
+                                    <div class="shield-spark spark-emanating trust-level-L4">
+                                        <i data-feather="shield" class="text-chitty-green"></i>
+                                        <span class="spark"></span>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <i data-feather="star" class="mb-2 text-chitty-green"></i>
+                                        <h6 class="text-muted mb-1">Chitty Score™</h6>
+                                        <div class="h3 text-chitty-green mb-0" id="chitty-score">--</div>
+                                        <small class="text-muted">Justice + Outcomes</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Dimension Breakdown -->
+            <div class="row mt-5" id="dimension-explanations" style="display: none;">
+                <div class="col-12">
+                    <h4 class="text-center text-white mb-4">
+                        <i data-feather="layers" class="me-2"></i>
+                        6D Trust Dimension Breakdown
+                    </h4>
+                    <div class="dimension-breakdown row g-4">
+                        <!-- Enhanced dimension cards will be created here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Real-time Action Center -->
+            <div class="row mt-5" id="action-center" style="display: none;">
+                <div class="col-12">
+                    <div class="glass-card text-center">
+                        <h5 class="text-chitty-green mb-4">
+                            <i data-feather="activity" class="me-2"></i>
+                            Trust Actions & Verification
+                        </h5>
+                        <div class="d-flex gap-3 justify-content-center flex-wrap">
+                            <button class="btn-enhanced" onclick="refreshTrustScore()">
+                                <i data-feather="refresh-cw" class="me-2"></i>
+                                Refresh Score
+                            </button>
+                            <button class="btn-enhanced" onclick="exportTrustReport()">
+                                <i data-feather="download" class="me-2"></i>
+                                Export Report
+                            </button>
+                            <button class="btn-enhanced" onclick="viewBlockchainRecord()">
+                                <i data-feather="link" class="me-2"></i>
+                                Blockchain Record
+                            </button>
+                            <button class="btn-enhanced" onclick="shareVerification()">
+                                <i data-feather="share-2" class="me-2"></i>
+                                Share Verification
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6D Education Section -->
+    <section class="py-5 bg-chitty-dark">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="text-white">Understanding the 6 Dimensions</h2>
+                    <p class="lead text-muted">Each dimension captures a crucial aspect of trustworthiness</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="dimension-card">
+                        <div class="card bg-dark border-chitty-blue h-100">
+                            <div class="card-body">
+                                <div class="dimension-icon text-chitty-blue mb-3">
+                                    <div class="shield-spark spark-over trust-level-L3">
+                                        <i data-feather="user-check"></i>
+                                        <span class="spark"></span>
+                                    </div>
+                                </div>
+                                <h5 class="text-white">Source (Who)</h5>
+                                <p class="text-muted">Identity verification, credentials, and professional certifications. Who are you really?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="dimension-card">
+                        <div class="card bg-dark border-chitty-blue h-100">
+                            <div class="card-body">
+                                <div class="dimension-icon text-chitty-blue mb-3">
+                                    <i data-feather="clock"></i>
+                                </div>
+                                <h5 class="text-white">Temporal (When)</h5>
+                                <p class="text-muted">Time-based analysis, consistency, and behavioral patterns over time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="dimension-card">
+                        <div class="card bg-dark border-chitty-blue h-100">
+                            <div class="card-body">
+                                <div class="dimension-icon text-chitty-blue mb-3">
+                                    <i data-feather="send"></i>
+                                </div>
+                                <h5 class="text-white">Channel (How)</h5>
+                                <p class="text-muted">Communication and transaction channels used. Blockchain beats anonymous.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="dimension-card">
+                        <div class="card bg-dark border-chitty-green h-100">
+                            <div class="card-body">
+                                <div class="dimension-icon text-chitty-green mb-3">
+                                    <div class="shield-spark spark-emanating trust-level-L4">
+                                        <i data-feather="target"></i>
+                                        <span class="spark"></span>
+                                    </div>
+                                </div>
+                                <h5 class="text-white">Outcome (Results)</h5>
+                                <p class="text-muted">Track record of positive/negative outcomes. Results speak louder than promises.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="dimension-card">
+                        <div class="card bg-dark border-chitty-blue h-100">
+                            <div class="card-body">
+                                <div class="dimension-icon text-chitty-blue mb-3">
+                                    <i data-feather="share-2"></i>
+                                </div>
+                                <h5 class="text-white">Network (Connections)</h5>
+                                <p class="text-muted">Quality of network connections and endorsements. You are your network.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="dimension-card">
+                        <div class="card bg-dark border-chitty-green h-100">
+                            <div class="card-body">
+                                <div class="dimension-icon text-chitty-green mb-3">
+                                    <div class="shield-spark spark-inside trust-level-L4">
+                                        <i data-feather="award"></i>
+                                        <span class="spark"></span>
+                                    </div>
+                                </div>
+                                <h5 class="text-white">Justice (Impact)</h5>
+                                <p class="text-muted">Alignment with justice principles and positive societal impact. The ultimate measure.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Output Scores Section -->
+    <section class="py-5 bg-chitty-darker">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="text-white">Four Types of Trust</h2>
+                    <p class="lead text-muted">Different stakeholders need different perspectives on trust</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="output-score-card">
+                        <div class="card bg-dark border-danger h-100">
+                            <div class="card-body text-center">
+                                <i data-feather="heart" class="mb-3 text-danger" style="width: 48px; height: 48px;"></i>
+                                <h5 class="text-white">People's Score</h5>
+                                <p class="text-muted">Community impact, social trust, and helping others. The score that matters to your neighbors.</p>
+                                <div class="score-weights">
+                                    <small class="text-muted">Emphasis: Network 25%, Justice 25%</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="output-score-card">
+                        <div class="card bg-dark border-warning h-100">
+                            <div class="card-body text-center">
+                                <i data-feather="file-text" class="mb-3 text-warning" style="width: 48px; height: 48px;"></i>
+                                <h5 class="text-white">Legal Score</h5>
+                                <p class="text-muted">Technical compliance, documentation, and legal standing. What lawyers and courts see.</p>
+                                <div class="score-weights">
+                                    <small class="text-muted">Emphasis: Source 25%, Channel 20%</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="output-score-card">
+                        <div class="card bg-dark border-info h-100">
+                            <div class="card-body text-center">
+                                <i data-feather="shield" class="mb-3 text-info" style="width: 48px; height: 48px;"></i>
+                                <h5 class="text-white">State Score</h5>
+                                <p class="text-muted">Authority approval and institutional trust. Government and regulatory perspective.</p>
+                                <div class="score-weights">
+                                    <small class="text-muted">Emphasis: Source 30%, Channel 25%</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="output-score-card">
+                        <div class="card bg-dark border-chitty-green h-100">
+                            <div class="card-body text-center">
+                                <i data-feather="star" class="mb-3 text-chitty-green" style="width: 48px; height: 48px;"></i>
+                                <h5 class="text-white">Chitty Score™</h5>
+                                <p class="text-muted">Justice + outcomes focused. The true measure of trustworthiness in the digital age.</p>
+                                <div class="score-weights">
+                                    <small class="text-muted">Emphasis: Justice 30%, Outcomes 25%</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-4 bg-chitty-dark border-top border-chitty-blue">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="text-muted">
+                        © 2025 ChittyTrust. Making trust measurable.
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="text-chitty-green fw-bold">
+                        🚀 NEVER SH*TTY™
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/trust-engine.js') }}"></script>
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+        
+        // Initialize Trust Engine
+        document.addEventListener('DOMContentLoaded', function() {
+            TrustEngine.init();
+        });
+
+        // Enhanced Interactive Functions
+        function refreshTrustScore() {
+            if (window.chittyTrustEnhanced && window.chittyTrustEnhanced.currentPersona) {
+                window.chittyTrustEnhanced.loadPersonaWithTransition(window.chittyTrustEnhanced.currentPersona);
+            }
+        }
+        
+        function exportTrustReport() {
+            if (window.chittyTrustEnhanced && window.chittyTrustEnhanced.trustData) {
+                const data = window.chittyTrustEnhanced.trustData;
+                const report = `ChittyTrust Report\n\nComposite Score: ${Math.round(data.composite * 100)}%\nChitty Score™: ${Math.round(data.scores.chitty * 100)}%\n\nGenerated: ${new Date().toLocaleString()}`;
+                
+                const blob = new Blob([report], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'chitty-trust-report.txt';
+                a.click();
+                
+                window.chittyTrustEnhanced.triggerSuccess('Trust report exported!');
+            }
+        }
+        
+        function viewBlockchainRecord() {
+            window.chittyTrustEnhanced.triggerSuccess('Blockchain record verified! Transaction ID: ctx_' + Math.random().toString(36).substr(2, 9));
+        }
+        
+        function shareVerification() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'ChittyTrust Verification',
+                    text: 'Check out my trust verification on ChittyTrust',
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                window.chittyTrustEnhanced.triggerSuccess('Verification link copied to clipboard!');
+            }
+        }
+
+        function scrollToDemo() {
+            document.getElementById('trust-dashboard').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+    </script>
+</body>
+</html>

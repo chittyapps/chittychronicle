@@ -1,0 +1,78 @@
+{
+  "chain": [
+    {
+      "index": 0,
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "version": 2,
+      "hash": "2cbdd56240390db5cd88777ab59f6a95fe4a5b1beeb59fbbed551c23957d231e",
+      "previousHash": "0",
+      "merkleRoot": "c3223fd2c4429c8a1ba722832459e3225fbdf5192bb8a535a6dccecf48a79dc7",
+      "nonce": 0,
+      "data": {
+        "artifacts": [
+          {
+            "id": "GENESIS_001",
+            "contentHash": "585f78759231c595dca58a7c2dc44d538d6b003cdaf569867fc62b92fd174944",
+            "statement": "ChittyChain Evidence Ledger initialized",
+            "weight": 1,
+            "timestamp": "2024-01-01T00:00:00.000Z",
+            "type": "SYSTEM",
+            "caseId": "SYSTEM",
+            "tier": "SYSTEM"
+          }
+        ],
+        "blockType": "GENESIS",
+        "chainVersion": "2.0.0"
+      },
+      "metadata": {
+        "miningDuration": 0,
+        "difficulty": 0,
+        "minerAddress": null,
+        "blockSize": 316
+      }
+    },
+    {
+      "index": 1,
+      "timestamp": 1752100256521,
+      "version": 2,
+      "hash": "00009265045d6908d5a5448082de52eb001a52ecc85316a0bc687593d982e7f6",
+      "previousHash": "2cbdd56240390db5cd88777ab59f6a95fe4a5b1beeb59fbbed551c23957d231e",
+      "merkleRoot": "4cd6c34c34ecfc3c47caf8ecbf56e70e491c9165f1d62874a6414e32f81fc303",
+      "nonce": 60343,
+      "data": {
+        "artifacts": [
+          {
+            "id": "CLI_1752100248724",
+            "contentHash": "e4fc93047715efae2c2089292400512ca5ee2da49018bb4afafe2a02816bb9e3",
+            "statement": "Final validation test evidence",
+            "weight": 0.5,
+            "type": "legal",
+            "tier": "UNCORROBORATED_PERSON",
+            "timestamp": "2025-07-09T22:30:48.724Z",
+            "submittedBy": "cli@chittychain.local",
+            "blockNumber": 1,
+            "mintedBy": "legal@chittychain.local",
+            "mintedAt": "2025-07-09T22:30:56.521Z",
+            "version": 2,
+            "metadata": {
+              "originalHash": "e4fc93047715efae2c2089292400512ca5ee2da49018bb4afafe2a02816bb9e3",
+              "mintingVersion": "2.0.0"
+            }
+          }
+        ],
+        "minter": "legal@chittychain.local",
+        "artifactCount": 1,
+        "blockType": "EVIDENCE",
+        "timestamp": "2025-07-09T22:30:56.521Z"
+      },
+      "metadata": {
+        "miningDuration": 290,
+        "difficulty": 4,
+        "minerAddress": null,
+        "blockSize": 642
+      }
+    }
+  ],
+  "pendingArtifacts": [],
+  "lastUpdated": "2025-07-09T22:30:56.812Z"
+}

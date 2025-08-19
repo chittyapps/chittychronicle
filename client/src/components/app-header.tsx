@@ -30,6 +30,24 @@ export default function AppHeader({ currentCase }: AppHeaderProps) {
                   Cases
                 </span>
               </Link>
+              <Link href="/dashboard">
+                <span className={`px-1 pb-1 text-sm font-medium cursor-pointer ${
+                  location === "/dashboard" 
+                    ? "text-primary border-b-2 border-primary" 
+                    : "text-muted hover:text-gray-900"
+                }`}>
+                  Dashboard
+                </span>
+              </Link>
+              <Link href="/timelines">
+                <span className={`px-1 pb-1 text-sm font-medium cursor-pointer ${
+                  location === "/timelines" 
+                    ? "text-primary border-b-2 border-primary" 
+                    : "text-muted hover:text-gray-900"
+                }`}>
+                  Timelines
+                </span>
+              </Link>
               {currentCase && (
                 <>
                   <Link href={`/timeline/${currentCase.id}`}>

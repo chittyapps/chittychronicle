@@ -74,6 +74,7 @@ export interface IStorage {
   
   // Search and analysis
   searchTimelineEntries(caseId: string, query: string): Promise<TimelineEntry[]>;
+  getAllTimelineEntries(): Promise<TimelineEntry[]>;
   getUpcomingDeadlines(caseId: string, daysAhead?: number): Promise<TimelineEntry[]>;
   getContradictions(caseId: string): Promise<TimelineContradiction[]>;
   
@@ -323,6 +324,14 @@ export class DatabaseStorage implements IStorage {
           like(timelineEntries.detailedNotes, `%${query}%`)
         )
       ))
+      .orderBy(desc(timelineEntries.date));
+  }
+
+  async getAllTimelineEntries(): Promise<TimelineEntry[]> {
+    return await db
+      .select()
+      .from(timelineEntries)
+      .where(isNull(timelineEntries.deletedAt))
       .orderBy(desc(timelineEntries.date));
   }
 
