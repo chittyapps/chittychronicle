@@ -28,8 +28,8 @@ export function UpgradePrompt({ context, compact = false }: UpgradePromptProps) 
       case "ecosystem":
         return {
           title: "Join the Complete Chitty Ecosystem",
-          description: "Unlock all 6 applications with ChittyID authentication and universal data portability",
-          features: ["All 6 Chitty apps", "Universal ChittyID", "Data portability", "Premium support"],
+          description: "Unlock all 6 applications with ChittyID universal authentication for people, places, things, and events",
+          features: ["All 6 Chitty apps", "Universal ChittyID for all entities", "Cross-app data portability", "Blockchain-verified identity"],
           cta: "Create ChittyID Account"
         };
       default:
