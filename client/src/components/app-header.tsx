@@ -33,7 +33,7 @@ export default function AppHeader({ currentCase }: AppHeaderProps) {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Clock className="text-white text-sm" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">ChittyTimeline</h1>
+              <h1 className="text-xl font-bold text-gray-900">ChittyChronicle</h1>
             </Link>
             <nav className="hidden md:flex space-x-6">
               <Link href="/">

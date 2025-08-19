@@ -1,0 +1,18 @@
+# ChittyOS CI/CD Workflow Protection
+# These owners will be requested for review when someone opens a pull request
+# modifying workflow files or critical configuration
+
+# Protect all GitHub Actions workflows
+/.github/workflows/ @nickbianchi @ChittyOS/cicd-admins
+
+# Protect CI/CD configuration files
+/setup-org-workflows.sh @nickbianchi @ChittyOS/cicd-admins
+/CODEOWNERS @nickbianchi
+/.github/ @nickbianchi @ChittyOS/cicd-admins
+
+# Protect SOP documentation
+/ChittyOS-CICD-SOPs.md @nickbianchi @ChittyOS/sop-reviewers
+/CICD-Quick-Reference.md @nickbianchi @ChittyOS/sop-reviewers
+
+# Default owners for everything else
+* @ChittyOS/developers

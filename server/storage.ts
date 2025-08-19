@@ -53,7 +53,7 @@ export interface IStorage {
     tags?: string[];
     limit?: number;
     offset?: number;
-  }): Promise<{entries: TimelineEntry[], total: number}>;
+  }): Promise<{entries: TimelineEntry[], totalCount: number, hasMore: boolean}>;
   
   getTimelineEntry(id: string, caseId: string): Promise<TimelineEntry | undefined>;
   createTimelineEntry(entryData: InsertTimelineEntry): Promise<TimelineEntry>;
@@ -171,31 +171,28 @@ export class DatabaseStorage implements IStorage {
       ));
 
     // Apply filters
+    const conditions = [
+      eq(timelineEntries.caseId, caseId),
+      isNull(timelineEntries.deletedAt)
+    ];
+    
     if (filters?.startDate) {
-      query = query.where(and(
-        eq(timelineEntries.caseId, caseId),
-        isNull(timelineEntries.deletedAt),
-        gte(timelineEntries.date, filters.startDate)
-      ));
+      conditions.push(gte(timelineEntries.date, filters.startDate));
     }
     
     if (filters?.endDate) {
-      query = query.where(and(
-        eq(timelineEntries.caseId, caseId),
-        isNull(timelineEntries.deletedAt),
-        lte(timelineEntries.date, filters.endDate)
-      ));
+      conditions.push(lte(timelineEntries.date, filters.endDate));
     }
     
     if (filters?.entryType) {
-      query = query.where(and(
-        eq(timelineEntries.caseId, caseId),
-        isNull(timelineEntries.deletedAt),
-        eq(timelineEntries.entryType, filters.entryType)
-      ));
+      conditions.push(eq(timelineEntries.entryType, filters.entryType));
     }
-
-    query = query.orderBy(desc(timelineEntries.date));
+    
+    query = db
+      .select()
+      .from(timelineEntries)
+      .where(and(...conditions))
+      .orderBy(desc(timelineEntries.date));
 
     if (filters?.limit) {
       query = query.limit(filters.limit);
@@ -346,14 +343,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getContradictions(caseId: string): Promise<TimelineContradiction[]> {
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: timelineContradictions.id,
+        createdAt: timelineContradictions.createdAt,
+        entryId: timelineContradictions.entryId,
+        conflictingEntryId: timelineContradictions.conflictingEntryId,
+        natureOfConflict: timelineContradictions.natureOfConflict,
+        resolution: timelineContradictions.resolution,
+        resolvedBy: timelineContradictions.resolvedBy,
+        resolvedDate: timelineContradictions.resolvedDate
+      })
       .from(timelineContradictions)
       .innerJoin(timelineEntries, eq(timelineContradictions.entryId, timelineEntries.id))
       .where(and(
         eq(timelineEntries.caseId, caseId),
         isNull(timelineEntries.deletedAt)
       ));
+    
+    return results;
   }
 
   // Data ingestion operations

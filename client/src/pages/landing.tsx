@@ -13,7 +13,7 @@ export default function Landing() {
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <Clock className="text-white h-6 w-6" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">ChittyTimeline</h1>
+              <h1 className="text-2xl font-bold text-gray-900">ChittyChronicle</h1>
             </div>
             <Button 
               onClick={() => window.location.href = '/api/login'}
@@ -147,7 +147,7 @@ export default function Landing() {
             Ready to Streamline Your Legal Timeline Management?
           </h3>
           <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join legal professionals who trust ChittyTimeline to manage their case 
+            Join legal professionals who trust ChittyChronicle to manage their case 
             timelines, evidence correlation, and deadline tracking with precision and compliance.
           </p>
           <Button 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ChittyTimeline is a legal timeline management application for evidentiary tracking and litigation support. Built with TypeScript/React frontend, Express backend, PostgreSQL database via Drizzle ORM, and Replit authentication.
+ChittyChronicle is a legal timeline management application for evidentiary tracking and litigation support. Built with TypeScript/React frontend, Express backend, PostgreSQL database via Drizzle ORM, and Replit authentication.
 
 ## Development Commands
 

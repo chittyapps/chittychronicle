@@ -1,0 +1,125 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+    
+    - name: Install Vercel CLI
+      run: npm install --global vercel@latest
+    
+    - name: Install dependencies with ChittyBeacon
+      run: |
+        npm ci
+        npm install @chittycorp/app-beacon --save
+    
+    - name: Add ChittyBeacon to Next.js app
+      run: |
+        # For Next.js apps, add to _app.js or _app.tsx
+        if [ -f "pages/_app.js" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - pages/_app.js > temp && mv temp pages/_app.js
+        elif [ -f "pages/_app.tsx" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - pages/_app.tsx > temp && mv temp pages/_app.tsx
+        elif [ -f "src/pages/_app.js" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - src/pages/_app.js > temp && mv temp src/pages/_app.js
+        elif [ -f "src/pages/_app.tsx" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - src/pages/_app.tsx > temp && mv temp src/pages/_app.tsx
+        elif [ -f "app/layout.js" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - app/layout.js > temp && mv temp app/layout.js
+        elif [ -f "app/layout.tsx" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - app/layout.tsx > temp && mv temp app/layout.tsx
+        fi
+    
+    - name: Pull Vercel Environment Information
+      run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+    
+    - name: Build Project Artifacts
+      run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+    
+    - name: Deploy Preview to Vercel
+      id: deploy
+      run: |
+        DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+        echo "deployment-url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+    
+    - name: Comment PR with preview URL
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🚀 Preview deployed to: ${{ steps.deploy.outputs.deployment-url }}'
+          })
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+    
+    - name: Install Vercel CLI
+      run: npm install --global vercel@latest
+    
+    - name: Install dependencies with ChittyBeacon
+      run: |
+        npm ci
+        npm install @chittycorp/app-beacon --save
+    
+    - name: Add ChittyBeacon to production build
+      run: |
+        # Add beacon with production config
+        echo "Adding ChittyBeacon for production..."
+        # Same logic as preview but with production env
+        if [ -f "pages/_app.js" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - pages/_app.js > temp && mv temp pages/_app.js
+        elif [ -f "pages/_app.tsx" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - pages/_app.tsx > temp && mv temp pages/_app.tsx
+        elif [ -f "src/pages/_app.js" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - src/pages/_app.js > temp && mv temp src/pages/_app.js
+        elif [ -f "src/pages/_app.tsx" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - src/pages/_app.tsx > temp && mv temp src/pages/_app.tsx
+        elif [ -f "app/layout.js" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - app/layout.js > temp && mv temp app/layout.js
+        elif [ -f "app/layout.tsx" ]; then
+          echo "import '@chittycorp/app-beacon';" | cat - app/layout.tsx > temp && mv temp app/layout.tsx
+        fi
+    
+    - name: Pull Vercel Environment Information
+      run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+    
+    - name: Build Project Artifacts
+      run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      env:
+        BEACON_ENDPOINT: ${{ secrets.BEACON_ENDPOINT || 'https://beacon.cloudeto.com' }}
+    
+    - name: Deploy to Production
+      run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

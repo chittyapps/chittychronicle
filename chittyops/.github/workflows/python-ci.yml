@@ -1,0 +1,155 @@
+name: Python CI/CD
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest pytest-cov black isort
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+    
+    - name: Add ChittyBeacon tracking
+      run: |
+        # Create a beacon module for Python apps
+        cat > chittybeacon.py << 'EOF'
+        import os
+        import json
+        import platform
+        import requests
+        from datetime import datetime
+        import threading
+        import time
+
+        class ChittyBeacon:
+            def __init__(self):
+                self.endpoint = os.environ.get('BEACON_ENDPOINT', 'https://beacon.cloudeto.com')
+                self.app_name = os.environ.get('APP_NAME', os.path.basename(os.getcwd()))
+                self.interval = int(os.environ.get('BEACON_INTERVAL', 300))
+                self.enabled = os.environ.get('BEACON_DISABLED', '').lower() != 'true'
+                
+                if self.enabled:
+                    self._send_startup()
+                    self._start_heartbeat()
+            
+            def _send_startup(self):
+                try:
+                    payload = {
+                        'event': 'startup',
+                        'app': self.app_name,
+                        'platform': platform.system(),
+                        'python_version': platform.python_version(),
+                        'timestamp': datetime.utcnow().isoformat()
+                    }
+                    requests.post(f"{self.endpoint}/track", json=payload, timeout=5)
+                except:
+                    pass
+            
+            def _start_heartbeat(self):
+                def heartbeat():
+                    while True:
+                        time.sleep(self.interval)
+                        try:
+                            payload = {
+                                'event': 'heartbeat',
+                                'app': self.app_name,
+                                'timestamp': datetime.utcnow().isoformat()
+                            }
+                            requests.post(f"{self.endpoint}/track", json=payload, timeout=5)
+                        except:
+                            pass
+                
+                thread = threading.Thread(target=heartbeat, daemon=True)
+                thread.start()
+
+        # Auto-initialize
+        _beacon = ChittyBeacon()
+        EOF
+        
+        # Add to __init__.py if exists
+        if [ -f "__init__.py" ]; then
+          echo "import chittybeacon" >> __init__.py
+        elif [ -f "src/__init__.py" ]; then
+          echo "import chittybeacon" >> src/__init__.py
+        fi
+    
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Format check with black
+      run: black --check .
+      continue-on-error: true
+    
+    - name: Sort imports with isort
+      run: isort --check-only .
+      continue-on-error: true
+    
+    - name: Test with pytest
+      run: |
+        pytest --cov=./ --cov-report=xml --cov-report=html
+      env:
+        BEACON_ENDPOINT: ${{ secrets.BEACON_ENDPOINT || 'https://beacon.cloudeto.com' }}
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Bandit security scanner
+      run: |
+        pip install bandit
+        bandit -r . -f json -o bandit-report.json
+      continue-on-error: true
+    
+    - name: Run Safety check
+      run: |
+        pip install safety
+        safety check --json
+      continue-on-error: true
+
+  deploy:
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: Deploy
+      run: echo "Add deployment logic here"
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        BEACON_ENDPOINT: ${{ secrets.BEACON_ENDPOINT || 'https://beacon.cloudeto.com' }}

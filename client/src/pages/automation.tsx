@@ -63,15 +63,18 @@ export default function Automation() {
   // Document ingestion mutation
   const ingestDocuments = useMutation({
     mutationFn: async (documents: Array<{fileName: string, content: string}>) => {
-      return await apiRequest('/api/ingestion/process', {
+      const response = await fetch('/api/ingestion/process', {
         method: 'POST',
-        body: { caseId, documents }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caseId, documents })
       });
+      if (!response.ok) throw new Error('Failed to process documents');
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
         title: "Documents Processed",
-        description: data.message,
+        description: (data as any).message || 'Documents processed successfully',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/ingestion/jobs', caseId] });
       queryClient.invalidateQueries({ queryKey: ['/api/timeline/entries'] });
@@ -90,10 +93,13 @@ export default function Automation() {
   // MCP integration mutation
   const createIntegration = useMutation({
     mutationFn: async (integrationData: any) => {
-      return await apiRequest('/api/mcp/integrations', {
+      const response = await fetch('/api/mcp/integrations', {
         method: 'POST',
-        body: integrationData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(integrationData)
       });
+      if (!response.ok) throw new Error('Failed to create integration');
+      return await response.json();
     },
     onSuccess: () => {
       toast({

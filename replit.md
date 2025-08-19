@@ -1,8 +1,8 @@
-# ChittyTimeline - Legal Timeline Management Application
+# ChittyChronicle - Legal Timeline Management Application
 
 ## Overview
 
-ChittyTimeline is a specialized legal timeline management application designed for evidentiary tracking and litigation support. The application enables legal professionals to manage case timelines, track evidence, monitor deadlines, detect contradictions, and maintain proper chain of custody documentation. It provides a comprehensive solution for organizing and managing legal information with strict compliance requirements, including attorney-client privilege protection and audit trail maintenance.
+ChittyChronicle is a specialized legal timeline management application designed for evidentiary tracking and litigation support. The application enables legal professionals to manage case timelines, track evidence, monitor deadlines, detect contradictions, and maintain proper chain of custody documentation. It provides a comprehensive solution for organizing and managing legal information with strict compliance requirements, including attorney-client privilege protection and audit trail maintenance.
 
 ## User Preferences
 

@@ -223,10 +223,30 @@ export const dataIngestionJobsRelations = relations(dataIngestionJobs, ({ one })
   }),
 }));
 
+// Case parties schema
+export const partySchema = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+  partyType: z.enum(['plaintiff', 'defendant', 'third_party', 'intervenor', 'witness']),
+  representedBy: z.string().optional(),
+  attorneyName: z.string().optional(),
+  attorneyFirm: z.string().optional(),
+  contactInfo: z.object({
+    email: z.string().email().optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+  }).optional(),
+  chittyId: z.string().optional(),
+  role: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 // Insert schemas
 export const insertCaseSchema = createInsertSchema(cases).omit({
   id: true,
   createdAt: true,
+}).extend({
+  parties: z.array(partySchema).optional(),
 });
 
 export const insertTimelineEntrySchema = createInsertSchema(timelineEntries).omit({
