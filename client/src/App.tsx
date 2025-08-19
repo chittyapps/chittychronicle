@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Timeline from "@/pages/timeline";
+import Automation from "@/pages/automation";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -20,6 +21,7 @@ function Router() {
         <>
           <Route path="/" component={Home} />
           <Route path="/timeline/:caseId" component={Timeline} />
+          <Route path="/automation/:caseId" component={Automation} />
         </>
       )}
       <Route component={NotFound} />

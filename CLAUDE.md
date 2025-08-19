@@ -4,21 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ChittyTimeline is a legal timeline management application for evidentiary tracking and litigation support. It's built with a TypeScript/React frontend, Express backend, PostgreSQL database (via Drizzle ORM), and uses Replit's authentication system.
+ChittyTimeline is a legal timeline management application for evidentiary tracking and litigation support. Built with TypeScript/React frontend, Express backend, PostgreSQL database via Drizzle ORM, and Replit authentication.
 
 ## Development Commands
 
 ```bash
-# Start development server (runs on port 5000 by default)
+# Start development server (port 5000)
 npm run dev
 
 # Build for production
 npm run build
 
-# Start production server
+# Start production server  
 npm run start
 
-# Run TypeScript type checking
+# TypeScript type checking
 npm run check
 
 # Push database schema changes
@@ -28,59 +28,77 @@ npm run db:push
 ## Architecture
 
 ### Tech Stack
-- **Frontend**: React 18 with TypeScript, TanStack Query, React Hook Form, shadcn/ui components
-- **Backend**: Express server with TypeScript (tsx for dev, esbuild for prod)
+- **Frontend**: React 18, TypeScript, TanStack Query, React Hook Form, shadcn/ui components
+- **Backend**: Express with TypeScript (tsx for dev, esbuild for prod)
 - **Database**: PostgreSQL with Drizzle ORM
-- **Auth**: Replit Auth integration with session management
-- **Styling**: Tailwind CSS with custom shadcn/ui components
+- **Auth**: Replit Auth with PostgreSQL session storage
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Build**: Vite for client, esbuild for server
 
-### Key Directories
-- `/client` - React frontend application
-  - `/src/components/ui` - shadcn/ui components library
-  - `/src/hooks` - Custom React hooks including auth
-  - `/src/pages` - Page components
+### Project Structure
+- `/client` - React frontend
+  - `/src/components/ui` - shadcn/ui component library
+  - `/src/hooks` - Custom hooks (auth, toast, mobile detection)
+  - `/src/pages` - Page components (home, timeline, landing)
+  - `/src/lib` - Utilities and query client setup
 - `/server` - Express backend
-  - `index.ts` - Server entry point
+  - `index.ts` - Server entry with middleware setup
   - `routes.ts` - API route definitions
-  - `storage.ts` - Database operations layer
-  - `replitAuth.ts` - Replit authentication setup
-  - `db.ts` - Database connection
-- `/shared` - Shared code between frontend and backend
-  - `schema.ts` - Drizzle schema definitions and Zod validation schemas
+  - `storage.ts` - Database operations interface
+  - `replitAuth.ts` - Replit OIDC authentication
+  - `db.ts` - Drizzle database connection
+  - `vite.ts` - Vite dev server integration
+  - `ingestionService.ts` - Document ingestion handling
+- `/shared` - Shared TypeScript code
+  - `schema.ts` - Drizzle schema and Zod validation schemas
 
-### API Structure
-All API routes are prefixed with `/api/` and require authentication:
-- `/api/auth/*` - Authentication endpoints
-- `/api/cases/*` - Case management
-- `/api/timeline/entries/*` - Timeline entry CRUD operations
-- `/api/timeline/analysis/*` - Analysis endpoints (contradictions, deadlines)
-- `/api/timeline/search` - Search functionality
+### API Routes
+All routes prefixed with `/api/` require authentication:
+- `/api/auth/user` - Get current user
+- `/api/cases` - CRUD operations for cases
+- `/api/timeline/entries` - Timeline entry CRUD with filtering
+- `/api/timeline/entries/:id/sources` - Document source management
+- `/api/timeline/analysis/contradictions` - Detect timeline conflicts
+- `/api/timeline/analysis/deadlines` - Upcoming deadline tracking
+- `/api/timeline/search` - Full-text search across entries
 
 ### Database Schema
-The application uses PostgreSQL with the following core tables:
-- `users` - User accounts from Replit Auth
-- `cases` - Legal cases
-- `timeline_entries` - Events and tasks with temporal data
-- `timeline_sources` - Document sources linked to entries
-- `timeline_contradictions` - Detected conflicts between entries
 
-Timeline entries support:
-- Two types: 'task' and 'event' with specific subtypes
-- Confidence levels for verification
-- Status tracking for both events and tasks
-- Relationship mapping via related_entries and dependencies arrays
-- Soft deletion with deleted_at timestamp
+Core tables:
+- `users` - Replit Auth user accounts
+- `sessions` - Express session storage
+- `cases` - Legal case records with ChittyPM integration
+- `timeline_entries` - Events/tasks with temporal data and ChittyID
+- `timeline_sources` - Document attachments
+- `timeline_contradictions` - Detected conflicts
+- `data_ingestion_jobs` - Document processing queue
+- `mcp_integrations` - MCP extension settings
+- `chitty_id_users` - ChittyID user mapping
+- `chitty_pm_projects` - ChittyPM project integration
 
-### Environment Requirements
+Key features:
+- Entry types: 'task' and 'event' with specific subtypes
+- Confidence levels: high/medium/low/unverified
+- Task status: pending/in_progress/completed/blocked
+- Event status: occurred/upcoming/missed
+- Soft deletion via deleted_at timestamp
+- Relationship tracking via related_entries and dependencies arrays
+
+### Environment Variables
 - `DATABASE_URL` - PostgreSQL connection string (required)
 - `PORT` - Server port (defaults to 5000)
-- `NODE_ENV` - Environment mode (development/production)
+- `NODE_ENV` - development/production
+- `SESSION_SECRET` - Express session secret (auto-generated in Replit)
+- `REPLIT_DOMAINS` - Replit domain for auth (auto-set)
+- `ISSUER_URL` - OIDC issuer (defaults to https://replit.com/oidc)
 
-## Important Notes
+## Key Implementation Details
 
-- The application runs on a single port serving both API and client
-- Authentication is handled via Replit Auth with session storage in PostgreSQL
-- All timeline entries generate a unique `chittyId` for system integration
-- The app supports file uploads via Google Cloud Storage integration
-- Vite is used for development with HMR support
-- Path aliases configured: `@/` for client/src, `@shared/` for shared code
+- Single port serves both API and client assets
+- Authentication uses Replit OIDC with Passport.js
+- Session storage in PostgreSQL via connect-pg-simple
+- File uploads handled via Google Cloud Storage integration
+- ChittyID generated for each timeline entry for external system integration
+- Path aliases: `@/` → client/src, `@shared/` → shared, `@assets/` → attached_assets
+- Vite HMR in development, static serving in production
+- Request logging for API calls with response truncation

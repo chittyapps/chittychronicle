@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Calendar, Scale, FileText, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Calendar, Scale, FileText, Clock, AlertTriangle, Bot, Zap } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -226,15 +226,29 @@ export default function Home() {
                       )}
                     </div>
                     
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full"
-                        data-testid={`view-case-${caseItem.id}`}
-                      >
-                        View Timeline
-                      </Button>
+                    <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                      <Link href={`/timeline/${caseItem.id}`}>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          data-testid={`view-timeline-${caseItem.id}`}
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          View Timeline
+                        </Button>
+                      </Link>
+                      <Link href={`/automation/${caseItem.id}`}>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="w-full"
+                          data-testid={`automation-${caseItem.id}`}
+                        >
+                          <Bot className="w-4 h-4 mr-2" />
+                          AI Automation
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>

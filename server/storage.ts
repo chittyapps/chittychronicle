@@ -4,6 +4,10 @@ import {
   timelineEntries,
   timelineSources,
   timelineContradictions,
+  dataIngestionJobs,
+  mcpIntegrations,
+  chittyIdUsers,
+  chittyPmProjects,
   type User,
   type UpsertUser,
   type Case,
@@ -14,6 +18,14 @@ import {
   type InsertTimelineSource,
   type TimelineContradiction,
   type InsertTimelineContradiction,
+  type DataIngestionJob,
+  type InsertDataIngestionJob,
+  type McpIntegration,
+  type InsertMcpIntegration,
+  type ChittyIdUser,
+  type InsertChittyIdUser,
+  type ChittyPmProject,
+  type InsertChittyPmProject,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, or, like, isNull } from "drizzle-orm";
@@ -60,6 +72,26 @@ export interface IStorage {
   searchTimelineEntries(caseId: string, query: string): Promise<TimelineEntry[]>;
   getUpcomingDeadlines(caseId: string, daysAhead?: number): Promise<TimelineEntry[]>;
   getContradictions(caseId: string): Promise<TimelineContradiction[]>;
+  
+  // Data ingestion operations
+  createDataIngestionJob(job: InsertDataIngestionJob): Promise<DataIngestionJob>;
+  getDataIngestionJobs(caseId: string): Promise<DataIngestionJob[]>;
+  updateDataIngestionJob(jobId: string, updates: Partial<DataIngestionJob>): Promise<DataIngestionJob | undefined>;
+  
+  // MCP integration operations
+  createMcpIntegration(integration: InsertMcpIntegration): Promise<McpIntegration>;
+  getMcpIntegrations(userId: string): Promise<McpIntegration[]>;
+  getMcpIntegration(integrationId: string): Promise<McpIntegration | undefined>;
+  updateMcpIntegration(integrationId: string, updates: Partial<McpIntegration>): Promise<McpIntegration | undefined>;
+  
+  // ChittyID operations
+  createChittyIdUser(user: InsertChittyIdUser): Promise<ChittyIdUser>;
+  getChittyIdUser(chittyId: string): Promise<ChittyIdUser | undefined>;
+  
+  // ChittyPM operations
+  createChittyPmProject(project: InsertChittyPmProject): Promise<ChittyPmProject>;
+  getChittyPmProjects(): Promise<ChittyPmProject[]>;
+  syncChittyPmProject(chittyPmId: string, updates: Partial<ChittyPmProject>): Promise<ChittyPmProject | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -129,7 +161,7 @@ export class DatabaseStorage implements IStorage {
     tags?: string[];
     limit?: number;
     offset?: number;
-  }): Promise<{entries: TimelineEntry[], total: number}> {
+  }): Promise<{entries: TimelineEntry[], totalCount: number, hasMore: boolean}> {
     let query = db
       .select()
       .from(timelineEntries)
@@ -184,7 +216,11 @@ export class DatabaseStorage implements IStorage {
         isNull(timelineEntries.deletedAt)
       ));
 
-    return { entries, total: count };
+    const limit = filters?.limit || 50;
+    const offset = filters?.offset || 0;
+    const hasMore = (offset + limit) < count;
+
+    return { entries, totalCount: count, hasMore };
   }
 
   async getTimelineEntry(id: string, caseId: string): Promise<TimelineEntry | undefined> {
@@ -318,6 +354,108 @@ export class DatabaseStorage implements IStorage {
         eq(timelineEntries.caseId, caseId),
         isNull(timelineEntries.deletedAt)
       ));
+  }
+
+  // Data ingestion operations
+  async createDataIngestionJob(job: InsertDataIngestionJob): Promise<DataIngestionJob> {
+    const [ingestionJob] = await db
+      .insert(dataIngestionJobs)
+      .values(job)
+      .returning();
+    return ingestionJob;
+  }
+
+  async getDataIngestionJobs(caseId: string): Promise<DataIngestionJob[]> {
+    return await db
+      .select()
+      .from(dataIngestionJobs)
+      .where(eq(dataIngestionJobs.caseId, caseId))
+      .orderBy(desc(dataIngestionJobs.createdAt));
+  }
+
+  async updateDataIngestionJob(jobId: string, updates: Partial<DataIngestionJob>): Promise<DataIngestionJob | undefined> {
+    const [job] = await db
+      .update(dataIngestionJobs)
+      .set(updates)
+      .where(eq(dataIngestionJobs.id, jobId))
+      .returning();
+    return job;
+  }
+
+  // MCP integration operations
+  async createMcpIntegration(integration: InsertMcpIntegration): Promise<McpIntegration> {
+    const [mcpIntegration] = await db
+      .insert(mcpIntegrations)
+      .values(integration)
+      .returning();
+    return mcpIntegration;
+  }
+
+  async getMcpIntegrations(userId: string): Promise<McpIntegration[]> {
+    return await db
+      .select()
+      .from(mcpIntegrations)
+      .where(eq(mcpIntegrations.createdBy, userId))
+      .orderBy(desc(mcpIntegrations.createdAt));
+  }
+
+  async getMcpIntegration(integrationId: string): Promise<McpIntegration | undefined> {
+    const [integration] = await db
+      .select()
+      .from(mcpIntegrations)
+      .where(eq(mcpIntegrations.id, integrationId));
+    return integration;
+  }
+
+  async updateMcpIntegration(integrationId: string, updates: Partial<McpIntegration>): Promise<McpIntegration | undefined> {
+    const [integration] = await db
+      .update(mcpIntegrations)
+      .set(updates)
+      .where(eq(mcpIntegrations.id, integrationId))
+      .returning();
+    return integration;
+  }
+
+  // ChittyID operations
+  async createChittyIdUser(user: InsertChittyIdUser): Promise<ChittyIdUser> {
+    const [chittyUser] = await db
+      .insert(chittyIdUsers)
+      .values(user)
+      .returning();
+    return chittyUser;
+  }
+
+  async getChittyIdUser(chittyId: string): Promise<ChittyIdUser | undefined> {
+    const [user] = await db
+      .select()
+      .from(chittyIdUsers)
+      .where(eq(chittyIdUsers.chittyId, chittyId));
+    return user;
+  }
+
+  // ChittyPM operations
+  async createChittyPmProject(project: InsertChittyPmProject): Promise<ChittyPmProject> {
+    const [pmProject] = await db
+      .insert(chittyPmProjects)
+      .values(project)
+      .returning();
+    return pmProject;
+  }
+
+  async getChittyPmProjects(): Promise<ChittyPmProject[]> {
+    return await db
+      .select()
+      .from(chittyPmProjects)
+      .orderBy(desc(chittyPmProjects.createdAt));
+  }
+
+  async syncChittyPmProject(chittyPmId: string, updates: Partial<ChittyPmProject>): Promise<ChittyPmProject | undefined> {
+    const [project] = await db
+      .update(chittyPmProjects)
+      .set(updates)
+      .where(eq(chittyPmProjects.chittyPmId, chittyPmId))
+      .returning();
+    return project;
   }
 }
 

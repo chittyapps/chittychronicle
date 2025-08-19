@@ -60,6 +60,8 @@ export const eventStatusEnum = pgEnum('event_status', ['occurred', 'upcoming', '
 export const taskStatusEnum = pgEnum('task_status', ['pending', 'in_progress', 'completed', 'blocked']);
 export const documentTypeEnum = pgEnum('document_type', ['court_filing', 'email', 'contract', 'financial', 'corporate_filing', 'correspondence', 'other']);
 export const verificationStatusEnum = pgEnum('verification_status', ['verified', 'pending', 'failed']);
+export const ingestionStatusEnum = pgEnum('ingestion_status', ['pending', 'processing', 'completed', 'failed']);
+export const ingestionSourceEnum = pgEnum('ingestion_source', ['email', 'cloud_storage', 'api', 'manual_upload', 'mcp_extension']);
 
 // Timeline entries table
 export const timelineEntries = pgTable("timeline_entries", {
@@ -118,6 +120,70 @@ export const timelineContradictions = pgTable("timeline_contradictions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Data ingestion pipeline table
+export const dataIngestionJobs = pgTable("data_ingestion_jobs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  caseId: uuid("case_id").references(() => cases.id).notNull(),
+  source: ingestionSourceEnum("source").notNull(),
+  sourceIdentifier: varchar("source_identifier", { length: 500 }),
+  status: ingestionStatusEnum("status").notNull().default('pending'),
+  documentsFound: varchar("documents_found", { length: 10 }).default('0'),
+  documentsProcessed: varchar("documents_processed", { length: 10 }).default('0'),
+  entriesCreated: varchar("entries_created", { length: 10 }).default('0'),
+  errorLog: text("error_log"),
+  processingStarted: timestamp("processing_started"),
+  processingCompleted: timestamp("processing_completed"),
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  metadata: jsonb("metadata"),
+});
+
+// MCP Integration table for external AI systems
+export const mcpIntegrations = pgTable("mcp_integrations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  integrationName: varchar("integration_name", { length: 100 }).notNull(),
+  platform: varchar("platform", { length: 50 }).notNull(), // claude, chatgpt, etc
+  apiEndpoint: varchar("api_endpoint", { length: 500 }),
+  authToken: varchar("auth_token", { length: 500 }),
+  isActive: varchar("is_active", { length: 10 }).notNull().default('true'),
+  lastSyncDate: timestamp("last_sync_date"),
+  syncStatus: varchar("sync_status", { length: 50 }).default('idle'),
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  metadata: jsonb("metadata"),
+});
+
+// ChittyID Integration table
+export const chittyIdUsers = pgTable("chitty_id_users", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  chittyId: varchar("chitty_id", { length: 255 }).unique().notNull(),
+  email: varchar("email", { length: 255 }).unique(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  organizationId: varchar("organization_id", { length: 255 }),
+  permissions: text("permissions").array().default(sql`ARRAY[]::text[]`),
+  isActive: varchar("is_active", { length: 10 }).notNull().default('true'),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ChittyPM Integration table
+export const chittyPmProjects = pgTable("chitty_pm_projects", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  chittyPmId: varchar("chitty_pm_id", { length: 255 }).unique().notNull(),
+  projectName: varchar("project_name", { length: 255 }).notNull(),
+  description: text("description"),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  status: varchar("status", { length: 50 }).notNull(),
+  teamMembers: text("team_members").array().default(sql`ARRAY[]::text[]`),
+  milestones: jsonb("milestones"),
+  lastSyncDate: timestamp("last_sync_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const casesRelations = relations(cases, ({ many }) => ({
   timelineEntries: many(timelineEntries),
@@ -150,6 +216,13 @@ export const timelineContradictionsRelations = relations(timelineContradictions,
   }),
 }));
 
+export const dataIngestionJobsRelations = relations(dataIngestionJobs, ({ one }) => ({
+  case: one(cases, {
+    fields: [dataIngestionJobs.caseId],
+    references: [cases.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCaseSchema = createInsertSchema(cases).omit({
   id: true,
@@ -172,6 +245,28 @@ export const insertTimelineContradictionSchema = createInsertSchema(timelineCont
   createdAt: true,
 });
 
+export const insertDataIngestionJobSchema = createInsertSchema(dataIngestionJobs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMcpIntegrationSchema = createInsertSchema(mcpIntegrations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertChittyIdUserSchema = createInsertSchema(chittyIdUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertChittyPmProjectSchema = createInsertSchema(chittyPmProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -183,3 +278,11 @@ export type TimelineSource = typeof timelineSources.$inferSelect;
 export type InsertTimelineSource = z.infer<typeof insertTimelineSourceSchema>;
 export type TimelineContradiction = typeof timelineContradictions.$inferSelect;
 export type InsertTimelineContradiction = z.infer<typeof insertTimelineContradictionSchema>;
+export type DataIngestionJob = typeof dataIngestionJobs.$inferSelect;
+export type InsertDataIngestionJob = z.infer<typeof insertDataIngestionJobSchema>;
+export type McpIntegration = typeof mcpIntegrations.$inferSelect;
+export type InsertMcpIntegration = z.infer<typeof insertMcpIntegrationSchema>;
+export type ChittyIdUser = typeof chittyIdUsers.$inferSelect;
+export type InsertChittyIdUser = z.infer<typeof insertChittyIdUserSchema>;
+export type ChittyPmProject = typeof chittyPmProjects.$inferSelect;
+export type InsertChittyPmProject = z.infer<typeof insertChittyPmProjectSchema>;
