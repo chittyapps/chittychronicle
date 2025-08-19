@@ -1,0 +1,644 @@
+    # ChittyTimeline Technical Specification
+
+     ## Overview
+
+     ChittyTimeline is a specialized legal timeline management application designed for evidentiary tracking and litigation
+     support. It integrates seamlessly with ChittyPM for comprehensive project management while maintaining the strict
+     requirements of legal documentation.
+
+     ## Core Features
+
+     ### 1. Timeline Management
+     - First-party source verification and linking
+     - Event vs Task distinction
+     - Temporal relationship mapping
+     - Contradiction detection and flagging
+     - Multi-version document tracking
+
+     ### 2. Evidence Integration
+     - Direct linking to source documents
+     - Page/paragraph-level citations
+     - Verification status tracking
+     - Chain of custody documentation
+     - Duplicate detection and consolidation
+
+     ### 3. Legal Compliance
+     - Attorney-client privilege protection
+     - Audit trail maintenance
+     - Court deadline tracking
+     - Service date calculations
+     - Statute of limitations monitoring
+
+     ## Data Models
+
+     ### Timeline Entry Schema
+
+     ```typescript
+     interface TimelineEntry {
+       id: string;                          // Unique identifier
+       chittyId: string;                    // ChittyID for system integration
+       entryType: 'task' | 'event';        // Primary classification
+
+       // Common fields
+       date: string;                        // ISO 8601 format (YYYY-MM-DD)
+       description: string;                 // Brief description
+       detailedNotes?: string;              // Extended information
+       tags: string[];                      // Categorization tags
+       confidenceLevel: 'high' | 'medium' | 'low' | 'unverified';
+
+       // Event-specific fields
+       eventSubtype?: 'deadline' | 'filed' | 'signed' | 'executed' |
+                      'served' | 'hearing' | 'occurred' | 'expired';
+       eventStatus?: 'occurred' | 'upcoming' | 'missed';
+
+       // Task-specific fields
+       taskSubtype?: 'draft' | 'file' | 'serve' | 'review' | 'respond';
+       taskStatus?: 'pending' | 'in_progress' | 'completed' | 'blocked';
+       assignedTo?: string;                 // ChittyPM user/executive ID
+       dueDate?: string;                    // For tasks with deadlines
+
+       // Source documentation
+       sources: Source[];                   // Array of supporting documents
+       contradictions?: Contradiction[];    // Conflicting information
+
+       // Relationships
+       relatedEntries: string[];            // IDs of related timeline entries
+       dependencies: string[];              // IDs of dependent entries
+       createdBy: string;                   // Agent/user who created entry
+       createdAt: string;                   // ISO 8601 timestamp
+       lastModified: string;                // ISO 8601 timestamp
+       modifiedBy: string;                  // Agent/user who last modified
+     }
+
+     interface Source {
+       documentType: 'court_filing' | 'email' | 'contract' | 'financial' |
+                     'corporate_filing' | 'correspondence' | 'other';
+       fileName: string;                    // Original document filename
+       filePath: string;                    // Storage location
+       page?: number | string;              // Page reference (e.g., "5" or "5-7")
+       paragraph?: string;                  // Paragraph/section reference
+       lineNumber?: string;                 // Line reference for transcripts
+       excerpt?: string;                    // Relevant quote
+       verificationStatus: 'verified' | 'pending' | 'failed';
+       verifiedDate?: string;               // When verification occurred
+       verifiedBy?: string;                 // Who/what verified
+       chittyAssetId?: string;              // Link to ChittyAssets if stored there
+     }
+
+     interface Contradiction {
+       conflictingEntryId: string;          // ID of conflicting entry
+       natureOfConflict: string;            // Description of contradiction
+       resolution?: string;                 // How conflict was resolved
+       resolvedBy?: string;                 // Who resolved it
+       resolvedDate?: string;               // When resolved
+     }
+     ```
+
+     ### Case Configuration Schema
+
+     ```typescript
+     interface CaseConfiguration {
+       caseId: string;                      // Unique case identifier
+       caseName: string;                    // Human-readable case name
+       caseNumber: string;                  // Court case number
+       jurisdiction: string;                // Court jurisdiction
+       parties: Party[];                    // Case parties
+       importantDates: {                    // Key case dates
+         filingDate?: string;
+         trialDate?: string;
+         discoveryDeadline?: string;
+       };
+       namespaces: string[];                // ChittyPM namespaces
+       integrations: {
+         chittyPM: {
+           projectId: string;
+           workspaceId: string;
+         };
+         chittyAssets?: {
+           folderId: string;
+         };
+         chittyChain?: {
+           chainId: string;
+         };
+       };
+     }
+
+     interface Party {
+       name: string;
+       role: 'plaintiff' | 'defendant' | 'third_party';
+       representation?: string;             // Attorney/firm name
+       chittyContactId?: string;            // Link to ChittyContacts
+     }
+     ```
+
+     ## API Specification
+
+     ### REST Endpoints
+
+     #### Timeline Operations
+
+     ```typescript
+     // Create new timeline entry
+     POST /api/timeline/entries
+     Body: TimelineEntry
+     Response: { success: boolean, entry: TimelineEntry, chittyId: string }
+
+     // Get timeline entries with filtering
+     GET /api/timeline/entries
+     Query params:
+       - startDate?: string (ISO 8601)
+       - endDate?: string (ISO 8601)
+       - entryType?: 'task' | 'event'
+       - eventSubtype?: string
+       - taskStatus?: string
+       - confidenceLevel?: string
+       - tags?: string[] (comma-separated)
+       - limit?: number
+       - offset?: number
+     Response: { entries: TimelineEntry[], total: number }
+
+     // Update timeline entry
+     PUT /api/timeline/entries/:id
+     Body: Partial<TimelineEntry>
+     Response: { success: boolean, entry: TimelineEntry }
+
+     // Delete timeline entry (soft delete)
+     DELETE /api/timeline/entries/:id
+     Response: { success: boolean }
+
+     // Verify source document
+     POST /api/timeline/entries/:id/verify
+     Body: { sourceIndex: number }
+     Response: { success: boolean, verificationResult: object }
+
+     // Add contradiction
+     POST /api/timeline/entries/:id/contradictions
+     Body: Contradiction
+     Response: { success: boolean, entry: TimelineEntry }
+     ```
+
+     #### Analysis Operations
+
+     ```typescript
+     // Generate timeline report
+     POST /api/timeline/reports/generate
+     Body: {
+       startDate?: string,
+       endDate?: string,
+       includeUnverified?: boolean,
+       format: 'pdf' | 'docx' | 'json',
+       groupBy?: 'date' | 'type' | 'party'
+     }
+     Response: { reportUrl: string, chittyAssetId: string }
+
+     // Find contradictions
+     GET /api/timeline/analysis/contradictions
+     Response: { contradictions: ConflictReport[] }
+
+     // Calculate deadlines
+     GET /api/timeline/analysis/deadlines
+     Query params:
+       - fromDate?: string
+       - days?: number (look ahead days)
+     Response: { deadlines: DeadlineReport[] }
+
+     // Export to ChittyPM
+     POST /api/timeline/export/chittypm
+     Body: {
+       entryIds?: string[],  // Specific entries or all
+       createTasks?: boolean,
+       projectId: string
+     }
+     Response: { success: boolean, tasksCreated: number }
+     ```
+
+     ### WebSocket Events
+
+     ```typescript
+     // Real-time updates
+     ws://api/timeline/subscribe
+
+     // Event types
+     {
+       type: 'entry.created' | 'entry.updated' | 'entry.deleted',
+       data: TimelineEntry
+     }
+
+     {
+       type: 'verification.completed',
+       data: { entryId: string, sourceIndex: number, result: object }
+     }
+
+     {
+       type: 'contradiction.detected',
+       data: { entries: string[], nature: string }
+     }
+     ```
+
+     ## ChittyPM Integration
+
+     ### Data Synchronization
+
+     ```typescript
+     interface ChittyPMSync {
+       // Push timeline events to ChittyPM
+       pushEvent(entry: TimelineEntry): Promise<{
+         success: boolean,
+         chittyPMTaskId?: string
+       }>;
+
+       // Pull task updates from ChittyPM
+       pullTaskUpdates(projectId: string): Promise<{
+         updates: TaskUpdate[]
+       }>;
+
+       // Subscribe to ChittyPM project changes
+       subscribeToProject(projectId: string, callback: (update: any) => void): void;
+     }
+     ```
+
+     ### Authentication Flow
+
+     ```javascript
+     // ChittyTimeline authenticates with ChittyPM
+     const authConfig = {
+       clientId: 'chittytimeline',
+       clientSecret: process.env.CHITTYTIMELINE_SECRET,
+       scope: ['timeline:read', 'timeline:write', 'tasks:create'],
+       chittyPMEndpoint: 'https://api.chittypm.com'
+     };
+
+     // OAuth2 flow for user authentication
+     const auth = new ChittyPMAuth(authConfig);
+     const token = await auth.authenticate();
+     ```
+
+     ## Implementation Architecture
+
+     ### Technology Stack
+
+     ```yaml
+     Backend:
+       - Language: TypeScript/Node.js
+       - Framework: Express.js / Fastify
+       - Database: PostgreSQL (managed by Neon)
+       - Vector Store: Pinecone/Weaviate for semantic search
+       - Cache: Redis for session management
+       - Queue: Bull/BullMQ for async processing
+
+     Frontend:
+       - Framework: React with TypeScript
+       - State Management: Redux Toolkit / Zustand
+       - UI Components: ChittyUI (shared component library)
+       - Timeline Visualization: D3.js / vis-timeline
+       - Document Viewer: PDF.js integration
+
+     Infrastructure:
+       - Deployment: Docker containers
+       - Orchestration: Kubernetes
+       - CI/CD: GitHub Actions
+       - Monitoring: ChittyMonitor integration
+       - Logging: Structured logs to ChittyLogs
+     ```
+
+     ### Database Schema
+
+     ```sql
+     -- Core timeline table
+     CREATE TABLE timeline_entries (
+       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       chitty_id VARCHAR(255) UNIQUE,
+       case_id UUID REFERENCES cases(id),
+       entry_type VARCHAR(10) NOT NULL CHECK (entry_type IN ('task', 'event')),
+       event_subtype VARCHAR(20),
+       task_subtype VARCHAR(20),
+       date DATE NOT NULL,
+       description TEXT NOT NULL,
+       detailed_notes TEXT,
+       confidence_level VARCHAR(20) NOT NULL,
+       event_status VARCHAR(20),
+       task_status VARCHAR(20),
+       assigned_to VARCHAR(255),
+       due_date DATE,
+       tags TEXT[],
+       related_entries UUID[],
+       dependencies UUID[],
+       created_by VARCHAR(255) NOT NULL,
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+       modified_by VARCHAR(255) NOT NULL,
+       last_modified TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+       deleted_at TIMESTAMP WITH TIME ZONE,
+       metadata JSONB
+     );
+
+     -- Sources table
+     CREATE TABLE timeline_sources (
+       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       entry_id UUID REFERENCES timeline_entries(id) ON DELETE CASCADE,
+       document_type VARCHAR(50) NOT NULL,
+       file_name TEXT NOT NULL,
+       file_path TEXT NOT NULL,
+       page VARCHAR(20),
+       paragraph VARCHAR(50),
+       line_number VARCHAR(20),
+       excerpt TEXT,
+       verification_status VARCHAR(20) NOT NULL,
+       verified_date TIMESTAMP WITH TIME ZONE,
+       verified_by VARCHAR(255),
+       chitty_asset_id VARCHAR(255),
+       metadata JSONB
+     );
+
+     -- Contradictions table
+     CREATE TABLE timeline_contradictions (
+       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       entry_id UUID REFERENCES timeline_entries(id) ON DELETE CASCADE,
+       conflicting_entry_id UUID REFERENCES timeline_entries(id),
+       nature_of_conflict TEXT NOT NULL,
+       resolution TEXT,
+       resolved_by VARCHAR(255),
+       resolved_date TIMESTAMP WITH TIME ZONE,
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+     );
+
+     -- Cases table
+     CREATE TABLE cases (
+       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       case_name VARCHAR(255) NOT NULL,
+       case_number VARCHAR(100) UNIQUE NOT NULL,
+       jurisdiction VARCHAR(255),
+       filing_date DATE,
+       trial_date DATE,
+       discovery_deadline DATE,
+       chitty_pm_project_id VARCHAR(255),
+       metadata JSONB,
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+     );
+
+     -- Indexes for performance
+     CREATE INDEX idx_timeline_date ON timeline_entries(date);
+     CREATE INDEX idx_timeline_type ON timeline_entries(entry_type);
+     CREATE INDEX idx_timeline_case ON timeline_entries(case_id);
+     CREATE INDEX idx_timeline_chitty_id ON timeline_entries(chitty_id);
+     CREATE INDEX idx_timeline_tags ON timeline_entries USING GIN(tags);
+     CREATE INDEX idx_sources_entry ON timeline_sources(entry_id);
+     CREATE INDEX idx_sources_verification ON timeline_sources(verification_status);
+     ```
+
+     ## Security Considerations
+
+     ### Access Control
+
+     ```typescript
+     interface SecurityConfig {
+       authentication: {
+         provider: 'chittyauth' | 'oauth2' | 'jwt';
+         config: AuthProviderConfig;
+       };
+
+       authorization: {
+         model: 'rbac' | 'abac';  // Role-based or Attribute-based
+         roles: Role[];
+         permissions: Permission[];
+       };
+
+       encryption: {
+         atRest: boolean;
+         algorithm: 'AES-256-GCM';
+         keyManagement: 'chittykeys' | 'aws-kms' | '1password';
+       };
+
+       privilegedData: {
+         attorneyClientPrivilege: boolean;
+         auditLogging: boolean;
+         dataRetention: number;  // days
+       };
+     }
+     ```
+
+     ### API Security
+
+     - JWT tokens with refresh mechanism
+     - Rate limiting per user/API key
+     - Request signing for sensitive operations
+     - IP allowlisting for production environments
+     - Comprehensive audit logging
+
+     ## Deployment Guide
+
+     ### Docker Configuration
+
+     ```dockerfile
+     # Dockerfile
+     FROM node:18-alpine AS builder
+     WORKDIR /app
+     COPY package*.json ./
+     RUN npm ci --only=production
+
+     COPY . .
+     RUN npm run build
+
+     FROM node:18-alpine
+     WORKDIR /app
+     COPY --from=builder /app/dist ./dist
+     COPY --from=builder /app/node_modules ./node_modules
+
+     ENV NODE_ENV=production
+     EXPOSE 3000
+
+     CMD ["node", "dist/server.js"]
+     ```
+
+     ### Environment Variables
+
+     ```bash
+     # Application
+     NODE_ENV=production
+     PORT=3000
+     APP_NAME=ChittyTimeline
+
+     # Database
+     DATABASE_URL=postgresql://user:pass@host:5432/chittytimeline
+     REDIS_URL=redis://localhost:6379
+
+     # ChittyPM Integration
+     CHITTYPM_API_URL=https://api.chittypm.com
+     CHITTYPM_CLIENT_ID=chittytimeline
+     CHITTYPM_CLIENT_SECRET=<secret>
+
+     # Security
+     JWT_SECRET=<secret>
+     ENCRYPTION_KEY=<secret>
+
+     # External Services
+     OPENAI_API_KEY=<key>
+     PINECONE_API_KEY=<key>
+     PINECONE_ENVIRONMENT=us-east-1
+
+     # Feature Flags
+     ENABLE_AI_VERIFICATION=true
+     ENABLE_CONTRADICTION_DETECTION=true
+     ENABLE_AUTO_SYNC=true
+     ```
+
+     ## Testing Strategy
+
+     ### Unit Tests
+
+     ```typescript
+     // Example test for timeline entry creation
+     describe('TimelineEntry', () => {
+       it('should create event with proper validation', async () => {
+         const entry = await TimelineService.createEntry({
+           entryType: 'event',
+           eventSubtype: 'filed',
+           date: '2024-01-10',
+           description: 'Motion to Compel filed',
+           sources: [{
+             documentType: 'court_filing',
+             fileName: 'motion_to_compel.pdf',
+             filePath: '/docs/motion_to_compel.pdf',
+             page: '1',
+             verificationStatus: 'verified'
+           }],
+           confidenceLevel: 'high'
+         });
+
+         expect(entry.chittyId).toBeDefined();
+         expect(entry.eventStatus).toBe('occurred');
+       });
+     });
+     ```
+
+     ### Integration Tests
+
+     ```typescript
+     // ChittyPM sync test
+     describe('ChittyPM Integration', () => {
+       it('should sync task to ChittyPM', async () => {
+         const task = await TimelineService.createEntry({
+           entryType: 'task',
+           taskSubtype: 'file',
+           description: 'File response to motion',
+           dueDate: '2024-01-31'
+         });
+
+         const result = await ChittyPMSync.pushEvent(task);
+         expect(result.success).toBe(true);
+         expect(result.chittyPMTaskId).toBeDefined();
+       });
+     });
+     ```
+
+     ## Usage Examples
+
+     ### Creating Timeline Entries
+
+     ```javascript
+     // Create an event
+     const filingEvent = await chittyTimeline.createEntry({
+       entryType: 'event',
+       eventSubtype: 'filed',
+       date: '2024-01-10',
+       description: 'Defendant Motion to Compel Discovery',
+       sources: [{
+         documentType: 'court_filing',
+         fileName: 'motion_to_compel_ecf45.pdf',
+         filePath: '/cases/arias-v-bianchi/filings/motion_to_compel_ecf45.pdf',
+         page: '1-15',
+         verificationStatus: 'verified'
+       }],
+       confidenceLevel: 'high',
+       tags: ['discovery', 'motion', 'defendant']
+     });
+
+     // Create related task
+     const responseTask = await chittyTimeline.createEntry({
+       entryType: 'task',
+       taskSubtype: 'respond',
+       date: '2024-01-31',
+       description: 'File Response to Motion to Compel',
+       dueDate: '2024-01-31',
+       taskStatus: 'pending',
+       relatedEntries: [filingEvent.id],
+       tags: ['discovery', 'response', 'deadline']
+     });
+     ```
+
+     ### Detecting Contradictions
+
+     ```javascript
+     // Check for date contradictions
+     const contradictions = await chittyTimeline.findContradictions({
+       startDate: '2023-01-01',
+       endDate: '2023-12-31',
+       type: 'date_conflict'
+     });
+
+     contradictions.forEach(conflict => {
+       console.log(`Conflict detected between entries ${conflict.entry1} and ${conflict.entry2}`);
+       console.log(`Nature: ${conflict.nature}`);
+     });
+     ```
+
+     ### Generating Reports
+
+     ```javascript
+     // Generate litigation timeline
+     const report = await chittyTimeline.generateReport({
+       caseId: 'arias-v-bianchi',
+       startDate: '2022-01-01',
+       format: 'pdf',
+       includeUnverified: false,
+       groupBy: 'date'
+     });
+
+     console.log(`Report generated: ${report.reportUrl}`);
+     console.log(`Stored in ChittyAssets: ${report.chittyAssetId}`);
+     ```
+
+     ## Monitoring and Maintenance
+
+     ### Health Checks
+
+     ```typescript
+     // Health check endpoint
+     GET /api/health
+     Response: {
+       status: 'healthy' | 'degraded' | 'unhealthy',
+       services: {
+         database: 'connected',
+         redis: 'connected',
+         chittyPM: 'connected',
+         vectorStore: 'connected'
+       },
+       version: '1.0.0',
+       uptime: 3600
+     }
+     ```
+
+     ### Metrics Collection
+
+     ```typescript
+     // Prometheus metrics
+     chittytimeline_entries_total{type="event", subtype="filed"} 245
+     chittytimeline_entries_total{type="task", status="completed"} 189
+     chittytimeline_contradictions_detected_total 12
+     chittytimeline_verifications_completed_total 433
+     chittytimeline_api_requests_total{endpoint="/api/timeline/entries", method="POST"} 1523
+     chittytimeline_api_request_duration_seconds{endpoint="/api/timeline/entries"} 0.145
+     ```
+
+     ## Version History
+
+     - v1.0.0 - Initial release with core timeline functionality
+     - v1.1.0 - Added ChittyPM integration
+     - v1.2.0 - Enhanced contradiction detection
+     - v1.3.0 - Added real-time synchronization
+     - v1.4.0 - Implemented AI-powered verification
+
+     ## License
+
+     Copyright © 2024 ChittyOS. All rights reserved.
+     Licensed under the ChittyOS Enterprise License.
+ 
