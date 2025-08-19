@@ -117,12 +117,7 @@ export default function AppHeader({ currentCase }: AppHeaderProps) {
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-600">CC</span>
-              <span className="text-sm font-medium text-gray-700">
-                ChittyChronicle User
-              </span>
-            </div>
+
           </div>
         </div>
       </div>
