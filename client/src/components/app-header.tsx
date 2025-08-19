@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { Clock, Briefcase, Shield, FileText } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { Case } from "@shared/schema";
 
@@ -87,6 +87,41 @@ export default function AppHeader({ currentCase }: AppHeaderProps) {
                   ChittyChronicle User
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Secondary Navigation - Chitty Ecosystem */}
+      <div className="border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center space-x-8">
+              <div className="flex items-center space-x-2">
+                <Briefcase className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">
+                  ChittyChronicle Dashboard
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Shield className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-600">
+                  ChittyVerify
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <FileText className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-600">
+                  ChittyCases
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-gray-600">CC</span>
+              <span className="text-sm font-medium text-gray-700">
+                ChittyChronicle User
+              </span>
             </div>
           </div>
         </div>
