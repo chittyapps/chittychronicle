@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // No authentication needed
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
-import Home from "@/pages/home";
+import ModernHome from "@/pages/modern-home";
 import Timeline from "@/pages/timeline";
 import Timelines from "@/pages/timelines";
 import Automation from "@/pages/automation";
@@ -15,7 +15,7 @@ import Dashboard from "@/pages/dashboard";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={ModernHome} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/timelines" component={Timelines} />
       <Route path="/timeline/:caseId" component={Timeline} />

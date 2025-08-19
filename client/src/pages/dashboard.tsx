@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import ModernLayout from "@/components/modern-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +16,6 @@ import {
   Link, Shield, Activity, TrendingUp, Users, Calendar, 
   AlertTriangle, FileCheck, Send, Package
 } from "lucide-react";
-import AppHeader from "@/components/app-header";
-import Sidebar from "@/components/sidebar";
 
 interface Contradiction {
   entry1: any;

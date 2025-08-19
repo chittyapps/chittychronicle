@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
-import AppHeader from "@/components/app-header";
+import ModernLayout from "@/components/modern-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Calendar, Scale, FileText, Clock, AlertTriangle, Bot } from "lucide-react";
+import { Plus, Calendar, Scale, FileText, Clock, AlertTriangle, TrendingUp, Activity, Bot } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useLocation } from "wouter";
-import { Shield } from "lucide-react";
+import { Link } from "wouter";
 import type { Case } from "@shared/schema";
 
 const createCaseSchema = z.object({
@@ -95,68 +94,126 @@ export default function Home() {
 
   if (isLoading || casesLoading) {
     return (
-      <div className="min-h-screen bg-bg-light">
-        <AppHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-300 rounded w-64"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 bg-gray-300 rounded-lg"></div>
-              ))}
-            </div>
+      <ModernLayout>
+        <div className="animate-fade-in space-y-6">
+          <div className="h-8 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-24 bg-gray-100 rounded-lg"></div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
-      </div>
+      </ModernLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg-light">
-      <AppHeader />
-      
-
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900" data-testid="page-title">
-              Case Dashboard
-            </h1>
-            <p className="text-muted mt-2">
-              Manage your legal cases and timeline entries
-            </p>
+    <ModernLayout>
+      <div className="space-y-8 animate-fade-in">
+        {/* Header with Stats */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight" data-testid="page-title">
+                Legal Cases
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Manage your legal cases and timeline entries
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="shadow-soft"
+              data-testid="create-case-button"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Case
+            </Button>
           </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-primary hover:bg-primary-dark text-white font-semibold"
-            data-testid="create-case-button"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Case
-          </Button>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <Scale className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active Cases</p>
+                    <p className="text-2xl font-bold">{cases?.length || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-50 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">This Month</p>
+                    <p className="text-2xl font-bold">12</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-yellow-50 rounded-lg">
+                    <Clock className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-2xl font-bold">3</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-soft">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-red-50 rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Urgent</p>
+                    <p className="text-2xl font-bold">1</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Cases Grid */}
         {!cases || cases.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Scale className="w-16 h-16 text-muted mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No Cases Yet
-              </h3>
-              <p className="text-muted mb-6">
-                Create your first case to start managing legal timelines
-              </p>
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-primary hover:bg-primary-dark text-white font-semibold"
-                data-testid="create-first-case-button"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Case
-              </Button>
+          <Card className="shadow-soft border-dashed border-2 border-gray-200">
+            <CardContent className="text-center py-16">
+              <div className="max-w-sm mx-auto">
+                <Scale className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+                <h3 className="text-xl font-semibold mb-2">
+                  No Cases Yet
+                </h3>
+                <p className="text-gray-600 mb-8">
+                  Create your first case to start managing legal timelines and evidence tracking
+                </p>
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  size="lg"
+                  className="shadow-soft"
+                  data-testid="create-first-case-button"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Your First Case
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
@@ -390,6 +447,6 @@ export default function Home() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </ModernLayout>
   );
 }
