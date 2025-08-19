@@ -1,0 +1,60 @@
+⏺ Write(CHITTYID_DEEP_DIVE_WORKFLOWS.md)
+  ⎿  Wrote 303 lines to CHITTYID_DEEP_DIVE_WORKFLOWS.md                      
+     # ChittyID Deep Dive & Workflows
+     > **Purpose** — An end‑to‑end reference that stitches **every major 
+     pull‑out** (building blocks, patterns, specs) into one living doc, then
+     drills down into the concrete **workflows** a developer, product owner,
+     or auditor actually follows.
+     ---
+     ## Table of Contents
+     1. Big‑Picture Snapshot
+     2. Ten Core Building Blocks (Recap)
+     … +293 lines (ctrl+r to expand)
+
+⏺ This comprehensive workflows document is now saved. It provides end-to-end
+  operational guidance covering:
+
+  Core Systems: 10 building blocks, layered architecture, lifecycle workflows
+  Development: Local dev setup, CI/CD, testing roadmapIntegration:
+  Cross-pillar workflows, Auth/SSO (L1-L5), migration paths
+  Implementation: UUIDv7 vs Time-First Mod-97 Base32 comparison with decision
+   framework
+  Business: Revenue streams, governance transition, tokenomics
+
+  The document balances technical depth with practical execution guidance for
+   developers, product owners, and auditors working with ChittyID.
+
+> @flow_analyzer/frontend/src/services/api.js
+
+⏺ I need to check if that file exists first, then read it if it does.
+
+⏺ List(.)
+  ⎿  Listed 32 paths (ctrl+r to expand)
+
+⏺ Read(frontend/src/services/api.js)
+  ⎿  Read 104 lines (ctrl+r to expand)
+
+⏺ This is a clean, standard frontend API service file for the ChittyTrace application. It provides:
+
+  Core Features:
+  - Axios-based HTTP client with /api base URL
+  - Bearer token authentication via localStorage
+  - Auto-redirect on 401 unauthorized responses
+
+  API Methods:
+  - Stats: getStats()
+  - Documents: getRecentDocuments(), uploadDocument(), analyzeDocument()
+  - Activity: getRecentActivity()
+  - Timeline: generateTimeline()
+  - Packages: createPackage()
+  - Forms: fillForm()
+  - Query: query()
+  - ChittyBeacon: getBeaconStatus()
+
+  The code follows standard security practices with proper error handling and authentication management.
+
+> @agent-cloudette-native-executor
+
+⏺ cloudette-native-executor(Execute cloudette native agent)
+  ⎿  Read(../../../Library/Mobile Documents/com~apple~CloudDocs/cloudette_native_agent.py)
+

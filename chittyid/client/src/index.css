@@ -1,0 +1,338 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(222, 84%, 4.9%);
+  --muted: hsl(210, 40%, 98%);
+  --muted-foreground: hsl(215.4, 16.3%, 46.9%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(222, 84%, 4.9%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222, 84%, 4.9%);
+  --border: hsl(214.3, 31.8%, 91.4%);
+  --input: hsl(214.3, 31.8%, 91.4%);
+  --primary: hsl(220, 85%, 60%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(220, 40%, 96%);
+  --secondary-foreground: hsl(220, 47.4%, 11.2%);
+  --accent: hsl(25, 40%, 96%);
+  --accent-foreground: hsl(25, 47.4%, 11.2%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --ring: hsl(220, 85%, 60%);
+  --radius: 0.5rem;
+  
+  /* Herrmann Whole Brain Thinking Color System */
+  --brain-blue: hsl(220, 85%, 60%); /* Analytical - Logic, Data, Facts */
+  --brain-orange: hsl(25, 85%, 60%); /* Practical - Process, Organization, Planning */
+  --brain-red: hsl(0, 80%, 60%); /* Interpersonal - Emotion, People, Communication */
+  --brain-yellow: hsl(45, 90%, 65%); /* Experimental - Creative, Vision, Innovation */
+  
+  /* Enhanced depth and dark theme */
+  --dark-bg: hsl(222, 30%, 6%);
+  --dark-card: hsl(222, 25%, 9%);
+  --dark-border: hsl(222, 20%, 15%);
+  --dark-text: hsl(222, 15%, 85%);
+  --dark-muted: hsl(222, 10%, 60%);
+  
+  /* Whole Brain gradients with depth */
+  --brain-blue-gradient: linear-gradient(135deg, var(--brain-blue), hsl(240, 85%, 50%));
+  --brain-orange-gradient: linear-gradient(135deg, var(--brain-orange), hsl(15, 85%, 50%));
+  --brain-red-gradient: linear-gradient(135deg, var(--brain-red), hsl(15, 80%, 50%));
+  --brain-yellow-gradient: linear-gradient(135deg, var(--brain-yellow), hsl(60, 90%, 55%));
+  
+  /* Whole Brain cascade levels */
+  --rainbow-l0: hsl(222, 15%, 25%); /* Dark neutral */
+  --rainbow-l1: var(--brain-blue-gradient); /* Analytical thinking */
+  --rainbow-l2: linear-gradient(135deg, var(--brain-blue), var(--brain-orange)); /* Analytical + Practical */
+  --rainbow-l3: linear-gradient(135deg, var(--brain-blue), var(--brain-orange), var(--brain-red)); /* + Interpersonal */
+  --rainbow-l4: linear-gradient(135deg, var(--brain-blue), var(--brain-orange), var(--brain-red), var(--brain-yellow)); /* + Experimental */
+  --rainbow-l5: linear-gradient(45deg, var(--brain-blue), var(--brain-orange), var(--brain-red), var(--brain-yellow), var(--brain-blue)); /* Full whole brain cascade */
+}
+
+.dark {
+  --background: hsl(222, 84%, 4.9%);
+  --foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217.2, 32.6%, 17.5%);
+  --muted-foreground: hsl(215, 20.2%, 65.1%);
+  --popover: hsl(222, 84%, 4.9%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 84%, 4.9%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217.2, 32.6%, 17.5%);
+  --input: hsl(217.2, 32.6%, 17.5%);
+  --primary: hsl(220, 85%, 60%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(217.2, 32.6%, 17.5%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --accent: hsl(217.2, 32.6%, 17.5%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(220, 85%, 60%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom utility classes for ChittyID styling */
+/* Dynamic Rainbow Classes */
+.chitty-gradient {
+  background: var(--rainbow-l2); /* Default to L2 blue+orange */
+}
+
+.chitty-gradient-l0 {
+  background: var(--rainbow-l0);
+}
+
+.chitty-gradient-l1 {
+  background: var(--rainbow-l1);
+}
+
+.chitty-gradient-l2 {
+  background: var(--rainbow-l2);
+}
+
+.chitty-gradient-l3 {
+  background: var(--rainbow-l3);
+}
+
+.chitty-gradient-l4 {
+  background: var(--rainbow-l4);
+}
+
+.chitty-gradient-l5 {
+  background: var(--rainbow-l5);
+  animation: rainbow-pulse 3s ease-in-out infinite;
+}
+
+.chitty-gradient-soft {
+  background: linear-gradient(135deg, hsl(220, 76%, 95%), hsl(25, 84%, 95%));
+}
+
+@keyframes rainbow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.02); opacity: 1; }
+}
+
+@keyframes rainbow-cascade {
+  0% { 
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  25% { 
+    background-position: 50% 0%;
+    filter: hue-rotate(90deg) brightness(1.1);
+  }
+  50% { 
+    background-position: 100% 50%;
+    filter: hue-rotate(180deg) brightness(1.2);
+  }
+  75% { 
+    background-position: 50% 100%;
+    filter: hue-rotate(270deg) brightness(1.1);
+  }
+  100% { 
+    background-position: 0% 50%;
+    filter: hue-rotate(360deg) brightness(1);
+  }
+}
+
+@keyframes color-shift {
+  0% { filter: hue-rotate(0deg) saturate(1) brightness(1); }
+  20% { filter: hue-rotate(72deg) saturate(1.2) brightness(1.1); }
+  40% { filter: hue-rotate(144deg) saturate(1.3) brightness(1.2); }
+  60% { filter: hue-rotate(216deg) saturate(1.2) brightness(1.1); }
+  80% { filter: hue-rotate(288deg) saturate(1.1) brightness(1.05); }
+  100% { filter: hue-rotate(360deg) saturate(1) brightness(1); }
+}
+
+.rainbow-cascade {
+  background: linear-gradient(45deg, 
+    hsl(220, 85%, 60%), 
+    hsl(25, 85%, 60%), 
+    hsl(0, 80%, 60%), 
+    hsl(45, 90%, 65%), 
+    hsl(280, 70%, 60%),
+    hsl(320, 75%, 65%),
+    hsl(220, 85%, 60%)
+  );
+  background-size: 400% 400%;
+  animation: rainbow-cascade 8s ease-in-out infinite, color-shift 12s linear infinite;
+}
+
+.rainbow-cascade-fast {
+  background: linear-gradient(135deg, 
+    hsl(240, 100%, 70%), 
+    hsl(30, 100%, 65%), 
+    hsl(15, 100%, 65%), 
+    hsl(60, 100%, 70%), 
+    hsl(300, 80%, 70%),
+    hsl(330, 90%, 75%),
+    hsl(240, 100%, 70%)
+  );
+  background-size: 600% 600%;
+  animation: rainbow-cascade 4s ease-in-out infinite, color-shift 6s linear infinite;
+}
+
+.rainbow-cascade-slow {
+  background: linear-gradient(90deg, 
+    hsl(200, 70%, 50%), 
+    hsl(35, 70%, 55%), 
+    hsl(10, 70%, 55%), 
+    hsl(50, 80%, 60%), 
+    hsl(270, 60%, 55%),
+    hsl(310, 65%, 60%),
+    hsl(200, 70%, 50%)
+  );
+  background-size: 500% 500%;
+  animation: rainbow-cascade 12s ease-in-out infinite, color-shift 18s linear infinite;
+}
+
+/* Text rainbow gradients */
+.rainbow-text-l0 {
+  background: var(--rainbow-l0);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.rainbow-text-l1 {
+  background: var(--rainbow-l1);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.rainbow-text-l2 {
+  background: var(--rainbow-l2);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.rainbow-text-l3 {
+  background: var(--rainbow-l3);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.rainbow-text-l4 {
+  background: var(--rainbow-l4);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.rainbow-text-l5 {
+  background: var(--rainbow-l5);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: rainbow-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes rainbow-shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Whole Brain Thinking classes */
+.brain-analytical {
+  color: var(--brain-blue);
+}
+
+.brain-analytical-bg {
+  background: var(--brain-blue-gradient);
+}
+
+.brain-practical {
+  color: var(--brain-orange);
+}
+
+.brain-practical-bg {
+  background: var(--brain-orange-gradient);
+}
+
+.brain-interpersonal {
+  color: var(--brain-red);
+}
+
+.brain-interpersonal-bg {
+  background: var(--brain-red-gradient);
+}
+
+.brain-experimental {
+  color: var(--brain-yellow);
+}
+
+.brain-experimental-bg {
+  background: var(--brain-yellow-gradient);
+}
+
+/* Dark theme with depth */
+.dark-page {
+  background: var(--dark-bg);
+  min-height: 100vh;
+}
+
+.dark-card {
+  background: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  color: var(--dark-text);
+}
+
+.dark-text {
+  color: var(--dark-text);
+}
+
+.dark-muted {
+  color: var(--dark-muted);
+}
+
+.chitty-card-hover {
+  transition: all 0.2s ease;
+}
+
+.chitty-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Trust score animations */
+@keyframes trust-score-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.trust-score-pulse {
+  animation: trust-score-pulse 2s ease-in-out infinite;
+}
+
+/* Verification status indicators */
+.verification-status-verified {
+  background: linear-gradient(90deg, hsl(220, 85%, 60%) 0%, hsl(220, 85%, 70%) 100%);
+}
+
+.verification-status-pending {
+  background: linear-gradient(90deg, hsl(45, 93%, 47%) 0%, hsl(45, 93%, 57%) 100%);
+}
+
+.verification-status-rejected {
+  background: linear-gradient(90deg, hsl(0, 84%, 60%) 0%, hsl(0, 84%, 70%) 100%);
+}

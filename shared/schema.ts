@@ -9,6 +9,7 @@ import {
   date,
   uuid,
   pgEnum,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -290,6 +291,8 @@ export const insertChittyPmProjectSchema = createInsertSchema(chittyPmProjects).
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+
 export type Case = typeof cases.$inferSelect;
 export type InsertCase = z.infer<typeof insertCaseSchema>;
 export type TimelineEntry = typeof timelineEntries.$inferSelect;

@@ -8,6 +8,17 @@ ChittyChronicle is a specialized legal timeline management application designed 
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+**ChittyID Authentication Integration (August 19, 2025)**
+- ✓ Created ChittyAuth service in `server/chittyAuth.ts` with full OIDC integration
+- ✓ Updated schema to support ChittyID users with roles, permissions, and attestations  
+- ✓ Added ChittyChain verification for cryptographic identity validation
+- ✓ Implemented role-based and permission-based access control middleware
+- ✓ Created React hook `useChittyAuth` for frontend authentication state
+- 🔄 ChittyAuth temporarily disabled during development - needs ChittyID server endpoints
+- ✅ Application runs successfully without authentication barriers
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -44,12 +55,14 @@ The database schema supports complex legal data structures including timeline en
 
 ### Authentication System
 
-**Replit Authentication** integration provides secure user management:
+**ChittyID Authentication** integration provides secure user management:
 
-- **OAuth Flow**: OpenID Connect with Replit as the identity provider
+- **OAuth Flow**: OpenID Connect with ChittyID as the identity provider for the Chitty ecosystem
+- **ChittyAuth Service**: Handles authentication flows with signature verification via ChittyChain
 - **Session Management**: PostgreSQL-backed sessions with configurable TTL
 - **Passport.js**: Handles authentication middleware and user serialization
-- **Authorization**: Route-level protection ensuring users can only access their own data
+- **Authorization**: Role-based and permission-based access control
+- **ChittyChain Integration**: Cryptographic verification of user identities and attestations
 
 ### File Upload Architecture
 
@@ -64,7 +77,8 @@ The application supports document management through multiple upload providers:
 ### Cloud Services
 - **Neon Database**: Serverless PostgreSQL hosting with automatic scaling
 - **Google Cloud Storage**: Document and file attachment storage
-- **Replit Authentication**: OAuth identity provider and user management
+- **ChittyID**: Universal identity system for Chitty ecosystem authentication
+- **ChittyChain**: Blockchain-based verification system for identity attestations
 
 ### Core Framework Dependencies
 - **React Ecosystem**: React 18, TanStack Query for data fetching, React Hook Form for forms

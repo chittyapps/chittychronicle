@@ -22,33 +22,33 @@ export default function AppHeader({ currentCase }: AppHeaderProps) {
             </Link>
             <nav className="hidden md:flex space-x-6">
               <Link href="/">
-                <a className={`px-1 pb-1 text-sm font-medium ${
+                <span className={`px-1 pb-1 text-sm font-medium cursor-pointer ${
                   location === "/" 
                     ? "text-primary border-b-2 border-primary" 
                     : "text-muted hover:text-gray-900"
                 }`}>
                   Cases
-                </a>
+                </span>
               </Link>
               {currentCase && (
                 <>
                   <Link href={`/timeline/${currentCase.id}`}>
-                    <a className={`px-1 pb-1 text-sm font-medium ${
+                    <span className={`px-1 pb-1 text-sm font-medium cursor-pointer ${
                       location.startsWith("/timeline") 
                         ? "text-primary border-b-2 border-primary" 
                         : "text-muted hover:text-gray-900"
                     }`}>
                       Timeline
-                    </a>
+                    </span>
                   </Link>
                   <Link href={`/automation/${currentCase.id}`}>
-                    <a className={`px-1 pb-1 text-sm font-medium ${
+                    <span className={`px-1 pb-1 text-sm font-medium cursor-pointer ${
                       location.startsWith("/automation") 
                         ? "text-primary border-b-2 border-primary" 
                         : "text-muted hover:text-gray-900"
                     }`}>
                       Automation
-                    </a>
+                    </span>
                   </Link>
                 </>
               )}

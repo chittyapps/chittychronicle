@@ -309,14 +309,17 @@ export class ChittyAuthService {
     await storage.upsertUser(userData);
 
     // Store ChittyID-specific data
-    await storage.createChittyIdUser({
-      chittyId: chittyUser.chittyId,
-      publicKey: chittyUser.publicKey || '',
-      roles: chittyUser.roles,
-      permissions: chittyUser.permissions,
-      verified: chittyUser.verified,
-      metadata: chittyUser.metadata,
-    });
+    const existingChittyUser = await storage.getChittyIdUser(chittyUser.chittyId);
+    if (!existingChittyUser) {
+      await storage.createChittyIdUser({
+        chittyId: chittyUser.chittyId,
+        publicKey: chittyUser.publicKey || '',
+        roles: chittyUser.roles,
+        permissions: chittyUser.permissions,
+        verified: chittyUser.verified,
+        metadata: chittyUser.metadata,
+      });
+    }
   }
 
   /**
@@ -403,7 +406,7 @@ export class ChittyAuthService {
       throw new Error('ChittyID not initialized');
     }
 
-    const response = await this.oidcConfig.refresh(refreshToken);
+    const response = await client.refreshTokenGrant(this.oidcConfig, refreshToken);
     
     return {
       accessToken: response.access_token,

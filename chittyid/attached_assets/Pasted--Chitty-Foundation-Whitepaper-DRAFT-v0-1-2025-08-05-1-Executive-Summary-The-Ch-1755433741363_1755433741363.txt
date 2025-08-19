@@ -1,0 +1,145 @@
+# Chitty Foundation Whitepaper
+
+### DRAFT v0.1 · 2025‑08‑05
+
+---
+
+## 1 · Executive Summary
+
+The **Chitty Foundation** stewards the development, governance, and economic fly‑wheel of **ChittyChain**—an evidence‑centric blockchain and off‑chain trust layer purpose‑built for legal, property‑tech, and financial compliance workloads.  Our mission: *“Make proof as frictionless as speech.”*
+
+---
+
+## 2 · Problem Statement
+
+Courts, regulators, and enterprises lack a unified, tamper‑proof ledger that:
+
+1. Guarantees **chain‑of‑custody** without revealing PII.
+2. Scales to millions of evidence items **per day**.
+3. Provides economic incentives for independent **validators & auditors**.
+4. Integrates with existing SaaS and document systems via **universal IDs**.
+
+---
+
+## 3 · Our Solution
+
+| Layer                      | Role                                  | Key Tech                              |
+| -------------------------- | ------------------------------------- | ------------------------------------- |
+| **Identifier**             | Deterministic, human‑readable IDs     | **UUID v7** (v1) → Mod‑97 Base32 (v2) |
+| **Off‑Chain Immutability** | 7‑day freeze & hash                   | Postgres + pgvector, IPFS CIDs        |
+| **On‑Chain Anchor**        | Final settlement & dispute resolution | EVM smart contracts, Chainlink CCIP   |
+| **Trust Graph**            | Dynamic reputation & risk scoring     | Neo4j + time‑decay algos              |
+
+---
+
+## 4 · Technical Architecture
+
+```mermaid
+graph TD
+    subgraph User Apps
+      A1(ChittyChat) --> API
+      A2(Property SaaS) --> API
+      A3(Law‑Firm CMS) --> API
+    end
+    API --> OffChain(DB & IPFS)
+    OffChain --> Oracle(Chain Oracle)
+    Oracle --> Chain(Smart Contract)
+    Chain --> Explorer(Proof Explorer)
+    Chain -. trustScore .-> Graph(Trust Graph)
+```
+
+* **Latency Budget**: Create→Freeze < 300 ms; Freeze→Mint ≤ 5 min batch.
+* **Scalability**: 100 TPS minting on L2 roll‑ups (zkSync / Arbitrum Orbit).
+
+---
+
+## 5 · Economic Model
+
+### 5.1 Token (CHITTY)
+
+* **Fixed supply**: 1 B tokens; 40 % Treasury, 30 % Validator rewards, 20 % Ecosystem grants, 10 % Team & Advisors.
+* **Utility**:
+   – Pay minting & storage fees.
+   – Stake to become validator or oracle.
+   – Vote in DAO governance once unlocked.
+
+### 5.2 Revenue Streams
+
+1. **Minting Fees** – 0.1 USDC ≃ 0.1 CHITTY per evidence token.
+2. **Verification‑as‑a‑Service** – tiered API calls priced in USDC or CHITTY.
+3. **Graph‑Analytics SaaS** – subscription for risk dashboards.
+4. **IPFS Pinning** – usage‑based GB fees.
+5. **Treasury Staking Yield** – treasury CHITTY allocated to liquidity pools.
+
+---
+
+## 6 · Governance
+
+| Phase                       | Control                                         | Trigger                            |
+| --------------------------- | ----------------------------------------------- | ---------------------------------- |
+| **0 – Foundation**          | Multisig (3/5) – core team                      | Mainnet launch                     |
+| **1 – Permissioned**        | Whitelisted validators, fee tuned by multisig   | 50 validators, 1 M evidence tokens |
+| **2 – DAO**                 | CHITTY token voting; on‑chain proposals         | 100 M CHITTY circulating           |
+| **3 – Fully Decentralized** | Parameter changes via on‑chain votes & timelock | ≥ 67 % of validators independent   |
+
+---
+
+## 7 · Identifier Roadmap
+
+| Version | Format                                   | Status                   | Notes                              |
+| ------- | ---------------------------------------- | ------------------------ | ---------------------------------- |
+| **v1**  | UUID v7 + semantic prefix                | *In flight (Q3 2025)*    | Native PG support, near‑sequential |
+| **v2**  | TTTTTTTTT‑NN‑VVV‑SSSS‑CC (Mod‑97 Base32) | PoC dual‑write (Q4 2025) | 24 chars, 99 % error detection     |
+| **v3**  | zk‑CID hybrid                            | Research (2026)          | Fully private verifiable IDs       |
+
+---
+
+## 8 · Security Model
+
+* **Dual‑Signatures** – foundation key + validator key required for mint.
+* **Slashing** – incorrect oracle data loses stake (Phase 2+).
+* **Proof‑of‑Inclusion** – Merkle proof stored on‑chain; off‑chain data lives on IPFS / Postgres.
+* **Audit Partners** – annual smart‑contract audit; quarterly financial audit.
+
+---
+
+## 9 · Compliance
+
+* **GDPR & CCPA** – PII stored off‑chain; right‑to‑erasure removes raw data but hash remains.
+* **SOC 2 Type II** – target attestation by Q1 2026.
+* **ISO/IEC 27001** – ISMS certification roadmap in progress.
+
+---
+
+## 10 · Roadmap (High‑Level)
+
+| Quarter     | Milestone                               | KPI                                  |
+| ----------- | --------------------------------------- | ------------------------------------ |
+| **2025 Q3** | Mainnet beta with UUID v7 IDs           | 10 validators, 100 k evidence tokens |
+| **2025 Q4** | Dual‑write ID PoC, DAO framework live   | DAO proposal #1 executed             |
+| **2026 Q1** | v2 ID decision + full validator staking | 500 k tokens minted, 50 validators   |
+| **2026 Q2** | Premium analytics launch                | ARR \$1 M run‑rate                   |
+| **2026 Q4** | zk‑CID R\&D milestone                   | Prototype demo                       |
+
+---
+
+## 11 · Risks & Mitigations
+
+| Risk                                | Mitigation                                                       |
+| ----------------------------------- | ---------------------------------------------------------------- |
+| Regulatory change bans on‑chain PII | Off‑chain encryption & selective disclosure—only hashes on chain |
+| Validator cartel                    | Randomized committee selection + slashing                        |
+| Token price volatility              | Dual‑pricing (USDC + CHITTY) for critical fees                   |
+| IPFS pin cost                       | Progressive pin‑fee model, cold‑storage tier                     |
+
+---
+
+## 12 · Call to Action
+
+The Chitty Foundation invites auditors, law‑tech startups, property‑tech platforms, and independent validators to join us in redefining how the world *proves* the truth.  Stake CHITTY, run a validator, or build atop our API—help turn *proof* into a public utility.
+
+> “**Proof is the new data.**”
+
+---
+
+*© 2025 Chitty Foundation – All rights reserved.*

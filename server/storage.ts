@@ -36,6 +36,10 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
+  // ChittyID User operations
+  getChittyIdUser(chittyId: string): Promise<ChittyIdUser | undefined>;
+  createChittyIdUser(userData: InsertChittyIdUser): Promise<ChittyIdUser>;
+  
   // Case operations
   getCases(userId: string): Promise<Case[]>;
   getCase(id: string, userId: string): Promise<Case | undefined>;

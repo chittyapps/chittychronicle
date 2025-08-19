@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Calendar, Scale, FileText, Clock, AlertTriangle, Bot, Zap } from "lucide-react";
+import { Plus, Calendar, Scale, FileText, Clock, AlertTriangle, Bot } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "wouter";
+import { Shield } from "lucide-react";
 import type { Case } from "@shared/schema";
 
 const createCaseSchema = z.object({
@@ -131,7 +132,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex gap-3">
           <Link href="/dashboard">
             <Button variant="outline" size="sm">
-              <BarChart3 className="w-4 h-4 mr-2" />
+              <Bot className="w-4 h-4 mr-2" />
               ChittyChronicle Dashboard
             </Button>
           </Link>

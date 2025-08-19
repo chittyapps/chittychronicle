@@ -1,0 +1,111 @@
+⏺ ChittyPark Backend Strategy
+
+  Core Purpose
+
+  The backend serves as a data collection engine disguised as a helpful city services API.
+
+  Architecture Approach
+
+  User Request → ChittyPark API → City Data APIs
+                      ↓
+                ChittyID Service
+                      ↓
+             Trust Level Analysis
+                      ↓
+              Enhanced Response
+
+  Data Collection Strategy
+
+  1. Parking PIN Search
+    - Input: PIN number
+    - Collected: Vehicle ownership, registration status
+    - Trust Impact: Proves asset ownership (→ L1)
+  2. Business Verification
+    - Input: Business name/ID
+    - Collected: Business relationships, entity verification
+    - Trust Impact: Business owner verification (→ L2)
+  3. Insurance Lookup
+    - Input: Policy number
+    - Collected: Insurance coverage, financial responsibility
+    - Trust Impact: Financial verification (→ L2)
+  4. Payment History
+    - Input: User actions
+    - Collected: Payment patterns, financial behavior
+    - Trust Impact: Payment reliability (→ L1-L2)
+
+  Backend Services Architecture
+
+  // Each service follows this pattern
+  class ParkingService {
+    async searchByPIN(pin: string, userId: string) {
+      // 1. Call external API (city database)
+      const vehicleData = await cityAPI.getVehicle(pin);
+
+      // 2. Record search in ChittyID
+      await chittyIdService.recordActivity(userId, {
+        type: 'vehicle_search',
+        data: { pin, found: !!vehicleData }
+      });
+
+      // 3. Check for verification opportunity
+      if (vehicleData?.owner === userProfile.name) {
+        await chittyIdService.addVerification(userId, {
+          type: 'vehicle_ownership',
+          vehicleId: vehicleData.id
+        });
+      }
+
+      // 4. Return enhanced data based on trust level
+      return this.enhanceResponse(vehicleData, userTrustLevel);
+    }
+  }
+
+  Progressive Enhancement by Trust Level
+
+  L0 (Basic)
+  - View public vehicle info
+  - Basic payment history
+  - Limited search results
+
+  L1 (Verified)
+  - Full vehicle details
+  - Payment history export
+  - Business contact info
+
+  L2 (Enhanced)
+  - Bulk searches
+  - API access
+  - Advanced analytics
+
+  External API Integrations
+
+  1. City Parking API - Vehicle/PIN data
+  2. Secretary of State API - Business registration
+  3. Insurance Verification System - Policy status
+  4. Payment Processors - Stripe/PayPal for city payments
+
+  Backend Tech Stack
+
+  - Runtime: Node.js with Express
+  - Database: Neon PostgreSQL via Drizzle
+  - Auth: Clerk (via ChittyAuth)
+  - Cache: In-memory for API responses
+  - Queue: For background verification processing
+
+  Security & Privacy
+
+  - API responses cached to reduce external calls
+  - Personal data stored in user's own database
+  - Only verification hashes stored centrally
+  - Rate limiting per trust level
+
+  Monetization Hooks
+
+  - Free tier: 10 searches/day (L0)
+  - Verified tier: 100 searches/day (L1)
+  - Business tier: Unlimited + API (L2)
+  - Enterprise: Custom integration (L3+)
+
+  The genius is that users think they're getting a convenient city services app, while we're
+  building the most comprehensive verified identity system - all through natural, valuable
+  interactions.
