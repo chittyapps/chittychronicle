@@ -466,7 +466,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 <p className="text-sm text-gray-700">
                   After creating your case, you can send timeline entries to ChittyLedger for evidence storage, 
                   ChittyVerify for verification, and ChittyTrust for trust scoring. Create a ChittyID account to 
-                  authenticate people, places, things, and events across the entire ecosystem.
+                  generate unique identifiers and authenticate people, places, things, and events across the entire ecosystem.
                 </p>
               </div>
             </div>

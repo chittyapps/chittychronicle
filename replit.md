@@ -18,7 +18,7 @@ Preferred communication style: Simple, everyday language.
 - ✓ Added ChittyChain verification for cryptographic identity validation
 - ✓ Implemented role-based and permission-based access control middleware
 - ✓ Created React hook `useChittyAuth` for frontend authentication state
-- ✓ Clarified ChittyID as universal authentication system for people, places, things, and events
+- ✓ Clarified ChittyID as unique ID provider and universal authentication system for people, places, things, and events
 - ✓ Updated upgrade prompts and documentation to emphasize universal entity authentication
 - 🔄 ChittyAuth temporarily disabled during development - needs ChittyID server endpoints
 - ✅ Application runs successfully without authentication barriers
@@ -74,7 +74,8 @@ The database schema supports complex legal data structures including timeline en
 
 **ChittyID Authentication** integration provides universal identification and secure user management:
 
-- **Universal Identity**: ChittyID serves as the authentication system for people, places, things, and events across the entire Chitty ecosystem
+- **Unique ID Provider**: ChittyID serves as the central unique identifier generation system for all entities
+- **Universal Identity**: ChittyID handles authentication for people, places, things, and events across the entire Chitty ecosystem
 - **OAuth Flow**: OpenID Connect with ChittyID as the identity provider for all Chitty applications
 - **ChittyAuth Service**: Handles authentication flows with signature verification via ChittyChain
 - **Session Management**: PostgreSQL-backed sessions with configurable TTL
