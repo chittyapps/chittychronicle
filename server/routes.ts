@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-// import { chittyAuth, isAuthenticated, hasRole, hasPermission } from "./chittyAuth";
+import { chittyAuth, isAuthenticated, hasRole, hasPermission } from "./chittyAuth";
 import { z } from "zod";
 import { 
   insertCaseSchema, 
@@ -16,15 +16,47 @@ import { chittyTrust } from "./chittyTrust";
 import { chittyBeacon } from "./chittyBeacon";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // ChittyID authentication - temporarily disabled for development
-  // await chittyAuth.setupAuth(app);
+  // ChittyID authentication - graceful degradation for development
+  try {
+    await chittyAuth.setupAuth(app);
+    console.log("✅ ChittyAuth initialized successfully");
+  } catch (error) {
+    console.warn("⚠️ ChittyAuth unavailable, running in development mode");
+    console.warn("ChittyID server endpoints needed for full authentication");
+  }
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({ 
       status: 'healthy', 
-      auth: 'Replit',
+      auth: 'ChittyAuth',
       timestamp: new Date().toISOString() 
+    });
+  });
+
+  // Authentication endpoints
+  app.get('/api/auth/user', (req: any, res) => {
+    // Check if user is authenticated via ChittyAuth
+    if (req.user) {
+      res.json(req.user);
+    } else {
+      // Demo mode - return null for unauthenticated state
+      res.status(401).json({ message: 'Not authenticated' });
+    }
+  });
+
+  app.get('/api/auth/login', (req, res) => {
+    // Redirect to ChittyID login
+    res.redirect('/auth/login');
+  });
+
+  app.get('/api/auth/logout', (req, res) => {
+    // Handle logout
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Logout failed' });
+      }
+      res.redirect('/');
     });
   });
 

@@ -91,11 +91,15 @@ function ModernHeader() {
           <Button variant="ghost" size="sm" className="p-2">
             <Settings className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" className="flex items-center space-x-2 p-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-sm font-medium">
-              CC
+          <Button 
+            variant="ghost" 
+            className="flex items-center space-x-2 p-2"
+            onClick={() => window.location.href = '/api/auth/login'}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-600">
+              CID
             </div>
-            <span className="hidden md:block text-sm font-medium">User</span>
+            <span className="hidden md:block text-sm font-medium">ChittyID Login</span>
           </Button>
         </div>
       </div>
