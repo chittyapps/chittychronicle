@@ -59,6 +59,8 @@ export interface IStorage {
     offset?: number;
   }): Promise<{entries: TimelineEntry[], totalCount: number, hasMore: boolean}>;
   
+  getTimelineEntriesByCase(caseId: string): Promise<TimelineEntry[]>;
+  
   getTimelineEntry(id: string, caseId: string): Promise<TimelineEntry | undefined>;
   createTimelineEntry(entryData: InsertTimelineEntry): Promise<TimelineEntry>;
   updateTimelineEntry(id: string, entryData: Partial<InsertTimelineEntry>, userId: string): Promise<TimelineEntry | undefined>;
@@ -223,6 +225,17 @@ export class DatabaseStorage implements IStorage {
     const hasMore = (offset + limit) < count;
 
     return { entries, totalCount: count, hasMore };
+  }
+  
+  async getTimelineEntriesByCase(caseId: string): Promise<TimelineEntry[]> {
+    return await db
+      .select()
+      .from(timelineEntries)
+      .where(and(
+        eq(timelineEntries.caseId, caseId),
+        isNull(timelineEntries.deletedAt)
+      ))
+      .orderBy(desc(timelineEntries.date));
   }
 
   async getTimelineEntry(id: string, caseId: string): Promise<TimelineEntry | undefined> {
