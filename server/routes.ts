@@ -14,6 +14,7 @@ import { ingestionService } from "./ingestionService";
 import { mcpService } from "./mcpService";
 import { chittyTrust } from "./chittyTrust";
 import { chittyBeacon } from "./chittyBeacon";
+import { contradictionService } from "./contradictionService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ChittyID authentication - graceful degradation for development
@@ -516,6 +517,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating digest:", error);
       res.status(500).json({ message: "Failed to generate digest" });
+    }
+  });
+
+  // AI-Powered Contradiction Detection
+  app.post('/api/cases/:caseId/analyze-contradictions', async (req: any, res) => {
+    try {
+      const caseId = req.params.caseId;
+      const analysis = await contradictionService.analyzeContradictions(caseId);
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error in contradiction analysis:", error);
+      res.status(500).json({ message: "Failed to analyze contradictions" });
+    }
+  });
+
+  app.get('/api/cases/:caseId/contradictions', async (req: any, res) => {
+    try {
+      const caseId = req.params.caseId;
+      const contradictions = await contradictionService.getContradictionReports(caseId);
+      res.json(contradictions);
+    } catch (error) {
+      console.error("Error fetching contradictions:", error);
+      res.status(500).json({ message: "Failed to fetch contradictions" });
+    }
+  });
+
+  app.post('/api/contradictions/:contradictionId/resolve', async (req: any, res) => {
+    try {
+      const contradictionId = req.params.contradictionId;
+      const { resolvedBy, resolution } = req.body;
+      
+      await contradictionService.resolveContradiction(contradictionId, resolvedBy, resolution);
+      res.json({ message: "Contradiction resolved successfully" });
+    } catch (error) {
+      console.error("Error resolving contradiction:", error);
+      res.status(500).json({ message: "Failed to resolve contradiction" });
+    }
+  });
+
+  app.post('/api/timeline-entries/analyze-contradictions', async (req: any, res) => {
+    try {
+      const { entryIds, caseId } = req.body;
+      const contradictions = await contradictionService.analyzeSpecificEntries(entryIds, caseId);
+      res.json(contradictions);
+    } catch (error) {
+      console.error("Error analyzing specific entries:", error);
+      res.status(500).json({ message: "Failed to analyze timeline entries" });
     }
   });
 

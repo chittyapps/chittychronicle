@@ -10,6 +10,7 @@ import {
   uuid,
   pgEnum,
   boolean,
+  real,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -288,6 +289,32 @@ export const insertChittyPmProjectSchema = createInsertSchema(chittyPmProjects).
   updatedAt: true,
 });
 
+// Contradiction Detection Schema
+export const contradictionReports = pgTable("contradiction_reports", {
+  id: varchar("id").primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => cases.id, { onDelete: "cascade" }),
+  timelineEntryIds: text("timeline_entry_ids").array().notNull(),
+  contradictionType: varchar("contradiction_type", { enum: ['temporal', 'factual', 'witness', 'location', 'entity', 'logical'] }).notNull(),
+  severity: varchar("severity", { enum: ['low', 'medium', 'high', 'critical'] }).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  conflictingStatements: jsonb("conflicting_statements").notNull(),
+  suggestedResolution: text("suggested_resolution"),
+  confidence: real("confidence").notNull(),
+  detectedAt: timestamp("detected_at").defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: varchar("resolved_by"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertContradictionReportSchema = createInsertSchema(contradictionReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -303,6 +330,8 @@ export type TimelineContradiction = typeof timelineContradictions.$inferSelect;
 export type InsertTimelineContradiction = z.infer<typeof insertTimelineContradictionSchema>;
 export type DataIngestionJob = typeof dataIngestionJobs.$inferSelect;
 export type InsertDataIngestionJob = z.infer<typeof insertDataIngestionJobSchema>;
+export type ContradictionReport = typeof contradictionReports.$inferSelect;
+export type InsertContradictionReport = z.infer<typeof insertContradictionReportSchema>;
 export type McpIntegration = typeof mcpIntegrations.$inferSelect;
 export type InsertMcpIntegration = z.infer<typeof insertMcpIntegrationSchema>;
 export type ChittyIdUser = typeof chittyIdUsers.$inferSelect;

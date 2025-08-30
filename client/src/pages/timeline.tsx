@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link as RouterLink } from "wouter";
+import { ContradictionAnalyzer } from "@/components/contradiction-analyzer";
 
 const createEntrySchema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -208,6 +209,9 @@ export default function Timeline() {
               </div>
             </CardContent>
           </Card>
+
+          {/* AI Contradiction Analysis */}
+          <ContradictionAnalyzer caseId={caseId!} />
 
           {/* Timeline Entries */}
           {timelineEntries.length === 0 ? (
