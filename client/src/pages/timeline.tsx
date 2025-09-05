@@ -14,13 +14,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { 
   Clock, Plus, Upload, FileText, Calendar, MapPin, User, 
   AlertTriangle, CheckCircle, ExternalLink, ArrowRight, 
-  Database, Shield, Brain, Link, ChevronLeft
+  Database, Shield, Brain, Link, ChevronLeft, MessageSquare
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link as RouterLink } from "wouter";
 import { ContradictionAnalyzer } from "@/components/contradiction-analyzer";
+import { UnifiedTimeline } from "@/components/unified-timeline";
 
 const createEntrySchema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -41,6 +42,7 @@ export default function Timeline() {
   const { toast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'timeline' | 'unified'>('timeline');
 
   const { data: caseDetails } = useQuery({
     queryKey: ["/api/cases", caseId],
@@ -155,6 +157,23 @@ export default function Timeline() {
               Add Entry
             </Button>
             
+            <Button 
+              variant={viewMode === 'unified' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setViewMode(viewMode === 'timeline' ? 'unified' : 'timeline')}
+              data-testid="button-toggle-view"
+            >
+              <MessageSquare className="h-4 w-4 mr-1" />
+              {viewMode === 'timeline' ? 'Unified View' : 'Timeline View'}
+            </Button>
+            
+            <RouterLink href={`/communications/${caseId}`}>
+              <Button variant="outline" size="sm">
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Communications
+              </Button>
+            </RouterLink>
+            
             <RouterLink href="/ecosystem">
               <Button variant="outline" size="sm">
                 <ExternalLink className="h-4 w-4 mr-1" />
@@ -214,7 +233,9 @@ export default function Timeline() {
           <ContradictionAnalyzer caseId={caseId!} />
 
           {/* Timeline Entries */}
-          {timelineEntries.length === 0 ? (
+          {viewMode === 'unified' ? (
+            <UnifiedTimeline caseId={caseId!} />
+          ) : timelineEntries.length === 0 ? (
             <Card className="shadow-soft border-dashed border-2 border-gray-300">
               <CardContent className="text-center py-20">
                 <Clock className="w-16 h-16 text-gray-400 mx-auto mb-6" />

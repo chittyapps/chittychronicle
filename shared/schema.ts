@@ -11,6 +11,7 @@ import {
   pgEnum,
   boolean,
   real,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -64,6 +65,10 @@ export const documentTypeEnum = pgEnum('document_type', ['court_filing', 'email'
 export const verificationStatusEnum = pgEnum('verification_status', ['verified', 'pending', 'failed']);
 export const ingestionStatusEnum = pgEnum('ingestion_status', ['pending', 'processing', 'completed', 'failed']);
 export const ingestionSourceEnum = pgEnum('ingestion_source', ['email', 'cloud_storage', 'api', 'manual_upload', 'mcp_extension']);
+export const messageSourceEnum = pgEnum('message_source', ['imessage', 'whatsapp', 'email', 'docusign', 'openphone']);
+export const partyIdTypeEnum = pgEnum('party_id_type', ['email', 'phone', 'whatsapp_jid', 'imessage', 'docusign', 'openphone', 'other']);
+export const messageDirectionEnum = pgEnum('message_direction', ['inbound', 'outbound', 'system']);
+export const messagePartyRoleEnum = pgEnum('message_party_role', ['sender', 'recipient', 'cc', 'bcc', 'signer', 'other']);
 
 // Timeline entries table
 export const timelineEntries = pgTable("timeline_entries", {
@@ -89,6 +94,10 @@ export const timelineEntries = pgTable("timeline_entries", {
   modifiedBy: varchar("modified_by", { length: 255 }).notNull(),
   lastModified: timestamp("last_modified").defaultNow(),
   deletedAt: timestamp("deleted_at"),
+  // Message linkage fields for audit trail when converting communications to timeline entries
+  messageId: uuid("message_id"),
+  messageSource: messageSourceEnum("message_source"),
+  messageDirection: messageDirectionEnum("message_direction"),
   metadata: jsonb("metadata"),
 });
 
@@ -315,6 +324,190 @@ export const insertContradictionReportSchema = createInsertSchema(contradictionR
   updatedAt: true,
 });
 
+// Communications tables
+export const parties = pgTable("parties", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  displayName: text("display_name"),
+  chittyId: varchar("chitty_id", { length: 255 }),
+  caseId: uuid("case_id").references(() => cases.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const partyIdentifiers = pgTable("party_identifiers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  partyId: uuid("party_id").references(() => parties.id, { onDelete: "cascade" }).notNull(),
+  idType: partyIdTypeEnum("id_type").notNull(),
+  identifier: text("identifier").notNull(),
+  normalizedIdentifier: text("normalized_identifier").generatedAlwaysAs(sql`
+    CASE
+      WHEN id_type = 'email' THEN lower(btrim(identifier))
+      WHEN id_type = 'phone' THEN regexp_replace(identifier, '[^0-9\\+]', '', 'g')
+      ELSE lower(btrim(identifier))
+    END
+  `),
+}, (table) => [
+  index("ux_party_identifier_unique").on(table.idType, table.normalizedIdentifier),
+]);
+
+export const conversations = pgTable("conversations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  source: messageSourceEnum("source"),
+  externalThreadId: text("external_thread_id"),
+  softKey: text("soft_key"),
+  caseId: uuid("case_id").references(() => cases.id),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  lastMessageAt: timestamp("last_message_at").defaultNow().notNull(),
+  confidence: real("confidence").default(1.0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("ux_conversation_source_thread").on(table.source, table.externalThreadId),
+]);
+
+export const messages = pgTable("messages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  source: messageSourceEnum("source").notNull(),
+  externalId: text("external_id"),
+  externalThreadId: text("external_thread_id"),
+  direction: messageDirectionEnum("direction"),
+  senderPartyId: uuid("sender_party_id").references(() => parties.id),
+  subject: text("subject"),
+  bodyText: text("body_text"),
+  normalizedText: text("normalized_text").generatedAlwaysAs(sql`
+    lower(regexp_replace(coalesce(body_text,''), '\\s+', ' ', 'g'))
+  `),
+  contentHash: text("content_hash").generatedAlwaysAs(sql`md5(lower(regexp_replace(coalesce(body_text,''), '\\s+', ' ', 'g')))`),
+  sentAt: timestamp("sent_at").notNull(),
+  receivedAt: timestamp("received_at"),
+  caseId: uuid("case_id").references(() => cases.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("ix_messages_sent_at").on(table.sentAt),
+  index("ix_messages_content_hash").on(table.contentHash),
+  index("ix_messages_case_id").on(table.caseId),
+]);
+
+export const messageParties = pgTable("message_parties", {
+  messageId: uuid("message_id").references(() => messages.id, { onDelete: "cascade" }).notNull(),
+  partyId: uuid("party_id").references(() => parties.id, { onDelete: "cascade" }).notNull(),
+  role: messagePartyRoleEnum("role").notNull(),
+}, (table) => [
+  index("ix_message_parties_party").on(table.partyId),
+]);
+
+export const conversationMessages = pgTable("conversation_messages", {
+  conversationId: uuid("conversation_id").references(() => conversations.id, { onDelete: "cascade" }).notNull(),
+  messageId: uuid("message_id").references(() => messages.id, { onDelete: "cascade" }).notNull(),
+});
+
+export const messageAttachments = pgTable("message_attachments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  messageId: uuid("message_id").references(() => messages.id, { onDelete: "cascade" }).notNull(),
+  fileName: text("file_name"),
+  mimeType: text("mime_type"),
+  url: text("url"),
+  sha256: text("sha256"),
+  sizeBytes: bigint("size_bytes", { mode: "number" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Communications insert schemas
+export const insertPartySchema = createInsertSchema(parties).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPartyIdentifierSchema = createInsertSchema(partyIdentifiers).omit({
+  id: true,
+});
+
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMessagePartySchema = createInsertSchema(messageParties);
+
+export const insertConversationMessageSchema = createInsertSchema(conversationMessages);
+
+export const insertMessageAttachmentSchema = createInsertSchema(messageAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Communications relations
+export const partiesRelations = relations(parties, ({ one, many }) => ({
+  case: one(cases, {
+    fields: [parties.caseId],
+    references: [cases.id],
+  }),
+  identifiers: many(partyIdentifiers),
+  sentMessages: many(messages),
+  messageParties: many(messageParties),
+}));
+
+export const partyIdentifiersRelations = relations(partyIdentifiers, ({ one }) => ({
+  party: one(parties, {
+    fields: [partyIdentifiers.partyId],
+    references: [parties.id],
+  }),
+}));
+
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  case: one(cases, {
+    fields: [conversations.caseId],
+    references: [cases.id],
+  }),
+  conversationMessages: many(conversationMessages),
+}));
+
+export const messagesRelations = relations(messages, ({ one, many }) => ({
+  case: one(cases, {
+    fields: [messages.caseId],
+    references: [cases.id],
+  }),
+  senderParty: one(parties, {
+    fields: [messages.senderPartyId],
+    references: [parties.id],
+  }),
+  messageParties: many(messageParties),
+  conversationMessages: many(conversationMessages),
+  attachments: many(messageAttachments),
+}));
+
+export const messagePartiesRelations = relations(messageParties, ({ one }) => ({
+  message: one(messages, {
+    fields: [messageParties.messageId],
+    references: [messages.id],
+  }),
+  party: one(parties, {
+    fields: [messageParties.partyId],
+    references: [parties.id],
+  }),
+}));
+
+export const conversationMessagesRelations = relations(conversationMessages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [conversationMessages.conversationId],
+    references: [conversations.id],
+  }),
+  message: one(messages, {
+    fields: [conversationMessages.messageId],
+    references: [messages.id],
+  }),
+}));
+
+export const messageAttachmentsRelations = relations(messageAttachments, ({ one }) => ({
+  message: one(messages, {
+    fields: [messageAttachments.messageId],
+    references: [messages.id],
+  }),
+}));
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -338,3 +531,19 @@ export type ChittyIdUser = typeof chittyIdUsers.$inferSelect;
 export type InsertChittyIdUser = z.infer<typeof insertChittyIdUserSchema>;
 export type ChittyPmProject = typeof chittyPmProjects.$inferSelect;
 export type InsertChittyPmProject = z.infer<typeof insertChittyPmProjectSchema>;
+
+// Communications types
+export type Party = typeof parties.$inferSelect;
+export type InsertParty = z.infer<typeof insertPartySchema>;
+export type PartyIdentifier = typeof partyIdentifiers.$inferSelect;
+export type InsertPartyIdentifier = z.infer<typeof insertPartyIdentifierSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type MessageParty = typeof messageParties.$inferSelect;
+export type InsertMessageParty = z.infer<typeof insertMessagePartySchema>;
+export type ConversationMessage = typeof conversationMessages.$inferSelect;
+export type InsertConversationMessage = z.infer<typeof insertConversationMessageSchema>;
+export type MessageAttachment = typeof messageAttachments.$inferSelect;
+export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSchema>;

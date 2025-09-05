@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import ModernHome from "@/pages/modern-home";
 import Timeline from "@/pages/timeline";
 import Timelines from "@/pages/timelines";
+import Communications from "@/pages/communications";
 import Automation from "@/pages/automation";
 import Dashboard from "@/pages/dashboard";
 import ChittyEcosystem from "@/pages/chitty-ecosystem";
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/timelines" component={Timelines} />
       <Route path="/timeline/:caseId" component={Timeline} />
+      <Route path="/communications/:caseId" component={Communications} />
       <Route path="/automation/:caseId" component={Automation} />
       <Route path="/ecosystem" component={ChittyEcosystem} />
       <Route component={NotFound} />

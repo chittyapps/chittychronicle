@@ -8,6 +8,13 @@ import {
   mcpIntegrations,
   chittyIdUsers,
   chittyPmProjects,
+  parties,
+  partyIdentifiers,
+  messages,
+  conversations,
+  messageParties,
+  conversationMessages,
+  messageAttachments,
   type User,
   type UpsertUser,
   type Case,
@@ -26,6 +33,20 @@ import {
   type InsertChittyIdUser,
   type ChittyPmProject,
   type InsertChittyPmProject,
+  type Party,
+  type InsertParty,
+  type PartyIdentifier,
+  type InsertPartyIdentifier,
+  type Message,
+  type InsertMessage,
+  type Conversation,
+  type InsertConversation,
+  type MessageParty,
+  type InsertMessageParty,
+  type ConversationMessage,
+  type InsertConversationMessage,
+  type MessageAttachment,
+  type InsertMessageAttachment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, or, like, isNull } from "drizzle-orm";
@@ -91,14 +112,58 @@ export interface IStorage {
   getMcpIntegration(integrationId: string): Promise<McpIntegration | undefined>;
   updateMcpIntegration(integrationId: string, updates: Partial<McpIntegration>): Promise<McpIntegration | undefined>;
   
-  // ChittyID operations
-  createChittyIdUser(user: InsertChittyIdUser): Promise<ChittyIdUser>;
-  getChittyIdUser(chittyId: string): Promise<ChittyIdUser | undefined>;
   
   // ChittyPM operations
   createChittyPmProject(project: InsertChittyPmProject): Promise<ChittyPmProject>;
   getChittyPmProjects(): Promise<ChittyPmProject[]>;
   syncChittyPmProject(chittyPmId: string, updates: Partial<ChittyPmProject>): Promise<ChittyPmProject | undefined>;
+  
+  // Communications operations
+  
+  // Party operations
+  createParty(partyData: InsertParty): Promise<Party>;
+  getParty(id: string): Promise<Party | undefined>;
+  findPartiesByCase(caseId: string): Promise<Party[]>;
+  findPartyByIdentifier(idType: string, normalizedIdentifier: string): Promise<Party | undefined>;
+  upsertPartyWithIdentifier(partyData: Omit<InsertParty, 'id'>, identifier: InsertPartyIdentifier): Promise<Party>;
+  linkPartyToChittyId(partyId: string, chittyId: string): Promise<Party | undefined>;
+  
+  // Party identifier operations
+  addIdentifier(identifierData: InsertPartyIdentifier): Promise<PartyIdentifier>;
+  listIdentifiers(partyId: string): Promise<PartyIdentifier[]>;
+  findByNormalized(idType: string, normalizedIdentifier: string): Promise<PartyIdentifier[]>;
+  
+  // Conversation operations
+  upsertConversationBySourceThread(source: string, externalThreadId: string, conversationData: Omit<InsertConversation, 'id'>): Promise<Conversation>;
+  findBySoftKey(caseId: string, softKey: string): Promise<Conversation | undefined>;
+  listConversationsByCase(caseId: string, options?: { limit?: number; cursor?: string }): Promise<Conversation[]>;
+  
+  // Message operations
+  upsertBySourceExternalId(source: string, externalId: string, messageData: Omit<InsertMessage, 'id'>): Promise<Message>;
+  getMessage(id: string): Promise<Message | undefined>;
+  listMessagesByCase(caseId: string, filters?: {
+    from?: string;
+    to?: string;
+    partyId?: string;
+    direction?: 'inbound' | 'outbound' | 'system';
+    limit?: number;
+    offset?: number;
+  }): Promise<Message[]>;
+  listMessagesByConversation(conversationId: string): Promise<Message[]>;
+  searchMessages(caseId: string, query: string): Promise<Message[]>;
+  
+  // Message party operations
+  addMessageRoles(messageId: string, roles: InsertMessageParty[]): Promise<MessageParty[]>;
+  listMessageParties(messageId: string): Promise<MessageParty[]>;
+  
+  // Conversation message operations
+  linkConversationMessage(conversationId: string, messageId: string): Promise<ConversationMessage>;
+  listConversationMessages(conversationId: string): Promise<Message[]>;
+  
+  // Message attachment operations
+  addAttachment(attachmentData: InsertMessageAttachment): Promise<MessageAttachment>;
+  listAttachmentsByMessage(messageId: string): Promise<MessageAttachment[]>;
+  findAttachmentBySha256(sha256: string): Promise<MessageAttachment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -490,6 +555,357 @@ export class DatabaseStorage implements IStorage {
       .where(eq(chittyPmProjects.chittyPmId, chittyPmId))
       .returning();
     return project;
+  }
+
+  // Communications operations
+
+  // Party operations
+  async createParty(partyData: InsertParty): Promise<Party> {
+    const [party] = await db
+      .insert(parties)
+      .values(partyData)
+      .returning();
+    return party;
+  }
+
+  async getParty(id: string): Promise<Party | undefined> {
+    const [party] = await db
+      .select()
+      .from(parties)
+      .where(eq(parties.id, id));
+    return party;
+  }
+
+  async findPartiesByCase(caseId: string): Promise<Party[]> {
+    return await db
+      .select()
+      .from(parties)
+      .where(eq(parties.caseId, caseId))
+      .orderBy(desc(parties.createdAt));
+  }
+
+  async findPartyByIdentifier(idType: string, normalizedIdentifier: string): Promise<Party | undefined> {
+    const result = await db
+      .select({
+        id: parties.id,
+        displayName: parties.displayName,
+        caseId: parties.caseId,
+        chittyId: parties.chittyId,
+        createdAt: parties.createdAt,
+      })
+      .from(parties)
+      .innerJoin(partyIdentifiers, eq(parties.id, partyIdentifiers.partyId))
+      .where(and(
+        eq(partyIdentifiers.idType, idType),
+        eq(partyIdentifiers.normalizedIdentifier, normalizedIdentifier)
+      ))
+      .limit(1);
+    
+    return result[0];
+  }
+
+  async upsertPartyWithIdentifier(partyData: Omit<InsertParty, 'id'>, identifier: InsertPartyIdentifier): Promise<Party> {
+    // First try to find existing party by identifier
+    const existing = await this.findPartyByIdentifier(identifier.idType, identifier.identifier);
+    
+    if (existing) {
+      // Update existing party if needed
+      const [updated] = await db
+        .update(parties)
+        .set(partyData)
+        .where(eq(parties.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    // Create new party and identifier
+    const [party] = await db
+      .insert(parties)
+      .values(partyData)
+      .returning();
+
+    await db
+      .insert(partyIdentifiers)
+      .values({
+        ...identifier,
+        partyId: party.id,
+      });
+
+    return party;
+  }
+
+  async linkPartyToChittyId(partyId: string, chittyId: string): Promise<Party | undefined> {
+    const [party] = await db
+      .update(parties)
+      .set({ chittyId })
+      .where(eq(parties.id, partyId))
+      .returning();
+    return party;
+  }
+
+  // Party identifier operations
+  async addIdentifier(identifierData: InsertPartyIdentifier): Promise<PartyIdentifier> {
+    const [identifier] = await db
+      .insert(partyIdentifiers)
+      .values(identifierData)
+      .returning();
+    return identifier;
+  }
+
+  async listIdentifiers(partyId: string): Promise<PartyIdentifier[]> {
+    return await db
+      .select()
+      .from(partyIdentifiers)
+      .where(eq(partyIdentifiers.partyId, partyId));
+  }
+
+  async findByNormalized(idType: string, normalizedIdentifier: string): Promise<PartyIdentifier[]> {
+    return await db
+      .select()
+      .from(partyIdentifiers)
+      .where(and(
+        eq(partyIdentifiers.idType, idType),
+        eq(partyIdentifiers.normalizedIdentifier, normalizedIdentifier)
+      ));
+  }
+
+  // Conversation operations
+  async upsertConversationBySourceThread(source: string, externalThreadId: string, conversationData: Omit<InsertConversation, 'id'>): Promise<Conversation> {
+    // Try to find existing conversation by source and external thread ID
+    const [existing] = await db
+      .select()
+      .from(conversations)
+      .where(and(
+        eq(conversations.source, source),
+        eq(conversations.externalThreadId, externalThreadId)
+      ))
+      .limit(1);
+
+    if (existing) {
+      // Update existing conversation
+      const [updated] = await db
+        .update(conversations)
+        .set(conversationData)
+        .where(eq(conversations.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    // Create new conversation
+    const [conversation] = await db
+      .insert(conversations)
+      .values({
+        ...conversationData,
+        source,
+        externalThreadId,
+      })
+      .returning();
+    return conversation;
+  }
+
+  async findBySoftKey(caseId: string, softKey: string): Promise<Conversation | undefined> {
+    const [conversation] = await db
+      .select()
+      .from(conversations)
+      .where(and(
+        eq(conversations.caseId, caseId),
+        eq(conversations.softKey, softKey)
+      ))
+      .limit(1);
+    return conversation;
+  }
+
+  async listConversationsByCase(caseId: string, options?: { limit?: number; cursor?: string }): Promise<Conversation[]> {
+    let query = db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.caseId, caseId))
+      .orderBy(desc(conversations.createdAt));
+
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    return await query;
+  }
+
+  // Message operations
+  async upsertBySourceExternalId(source: string, externalId: string, messageData: Omit<InsertMessage, 'id'>): Promise<Message> {
+    // Try to find existing message by source and external ID
+    const [existing] = await db
+      .select()
+      .from(messages)
+      .where(and(
+        eq(messages.source, source),
+        eq(messages.externalId, externalId)
+      ))
+      .limit(1);
+
+    if (existing) {
+      // Update existing message
+      const [updated] = await db
+        .update(messages)
+        .set(messageData)
+        .where(eq(messages.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    // Create new message
+    const [message] = await db
+      .insert(messages)
+      .values({
+        ...messageData,
+        source,
+        externalId,
+      })
+      .returning();
+    return message;
+  }
+
+  async getMessage(id: string): Promise<Message | undefined> {
+    const [message] = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.id, id));
+    return message;
+  }
+
+  async listMessagesByCase(caseId: string, filters?: {
+    from?: string;
+    to?: string;
+    partyId?: string;
+    direction?: 'inbound' | 'outbound' | 'system';
+    limit?: number;
+    offset?: number;
+  }): Promise<Message[]> {
+    let query = db
+      .select()
+      .from(messages)
+      .where(eq(messages.caseId, caseId))
+      .orderBy(desc(messages.sentAt));
+
+    // Apply filters
+    const conditions = [eq(messages.caseId, caseId)];
+    
+    if (filters?.direction) {
+      conditions.push(eq(messages.direction, filters.direction));
+    }
+
+    query = db
+      .select()
+      .from(messages)
+      .where(and(...conditions))
+      .orderBy(desc(messages.sentAt));
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
+
+    if (filters?.offset) {
+      query = query.offset(filters.offset);
+    }
+
+    return await query;
+  }
+
+  async listMessagesByConversation(conversationId: string): Promise<Message[]> {
+    return await db
+      .select({
+        id: messages.id,
+        source: messages.source,
+        externalId: messages.externalId,
+        direction: messages.direction,
+        externalThreadId: messages.externalThreadId,
+        subject: messages.subject,
+        bodyText: messages.bodyText,
+        normalizedText: messages.normalizedText,
+        contentHash: messages.contentHash,
+        sentAt: messages.sentAt,
+        receivedAt: messages.receivedAt,
+        caseId: messages.caseId,
+        createdAt: messages.createdAt,
+        senderPartyId: messages.senderPartyId,
+      })
+      .from(messages)
+      .innerJoin(conversationMessages, eq(messages.id, conversationMessages.messageId))
+      .where(eq(conversationMessages.conversationId, conversationId))
+      .orderBy(messages.sentAt);
+  }
+
+  async searchMessages(caseId: string, query: string): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(and(
+        eq(messages.caseId, caseId),
+        or(
+          like(messages.subject, `%${query}%`),
+          like(messages.bodyText, `%${query}%`)
+        )
+      ))
+      .orderBy(desc(messages.sentAt));
+  }
+
+  // Message party operations
+  async addMessageRoles(messageId: string, roles: InsertMessageParty[]): Promise<MessageParty[]> {
+    const roleData = roles.map(role => ({
+      ...role,
+      messageId,
+    }));
+
+    return await db
+      .insert(messageParties)
+      .values(roleData)
+      .returning();
+  }
+
+  async listMessageParties(messageId: string): Promise<MessageParty[]> {
+    return await db
+      .select()
+      .from(messageParties)
+      .where(eq(messageParties.messageId, messageId));
+  }
+
+  // Conversation message operations
+  async linkConversationMessage(conversationId: string, messageId: string): Promise<ConversationMessage> {
+    const [link] = await db
+      .insert(conversationMessages)
+      .values({
+        conversationId,
+        messageId,
+      })
+      .returning();
+    return link;
+  }
+
+  async listConversationMessages(conversationId: string): Promise<Message[]> {
+    return this.listMessagesByConversation(conversationId);
+  }
+
+  // Message attachment operations
+  async addAttachment(attachmentData: InsertMessageAttachment): Promise<MessageAttachment> {
+    const [attachment] = await db
+      .insert(messageAttachments)
+      .values(attachmentData)
+      .returning();
+    return attachment;
+  }
+
+  async listAttachmentsByMessage(messageId: string): Promise<MessageAttachment[]> {
+    return await db
+      .select()
+      .from(messageAttachments)
+      .where(eq(messageAttachments.messageId, messageId));
+  }
+
+  async findAttachmentBySha256(sha256: string): Promise<MessageAttachment | undefined> {
+    const [attachment] = await db
+      .select()
+      .from(messageAttachments)
+      .where(eq(messageAttachments.sha256, sha256))
+      .limit(1);
+    return attachment;
   }
 }
 
