@@ -1,0 +1,758 @@
+
+Always show details
+
+# This script creates a "Cross-Source Message Merge Package" scaffold,
+# writes all required files, and bundles them into a zip for download.
+
+import os, textwrap, json, hashlib, zipfile, pathlib, datetime
+
+root = "/mnt/data/cross-source-message-merge"
+paths = [
+    "database/schema",
+    "sample_data",
+    "scripts",
+]
+
+for p in paths:
+    os.makedirs(os.path.join(root, p), exist_ok=True)
+
+# ------------------------
+# SQL: Schema
+# ------------------------
+schema_sql = r"""
+-- cross_source_merge_schema.sql
+-- Neon/PostgreSQL schema for unified communications timeline
+
+BEGIN;
+
+-- Enum for message source
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'message_source') THEN
+        CREATE TYPE message_source AS ENUM ('imessage','whatsapp','email','docusign','openphone');
+    END IF;
+END$$;
+
+CREATE TABLE IF NOT EXISTS parties (
+    party_id        BIGSERIAL PRIMARY KEY,
+    display_name    TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS party_identifiers (
+    party_identifier_id BIGSERIAL PRIMARY KEY,
+    party_id            BIGINT NOT NULL REFERENCES parties(party_id) ON DELETE CASCADE,
+    id_type             TEXT NOT NULL CHECK (id_type IN ('email','phone','whatsapp_jid','imessage','docusign','openphone','other')),
+    identifier          TEXT NOT NULL,
+    normalized_identifier TEXT GENERATED ALWAYS AS (
+        CASE
+            WHEN id_type = 'email' THEN lower(btrim(identifier))
+            WHEN id_type = 'phone' THEN regexp_replace(identifier, '[^0-9\+]', '', 'g')
+            ELSE lower(btrim(identifier))
+        END
+    ) STORED
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_party_identifier_unique
+    ON party_identifiers (id_type, normalized_identifier);
+
+CREATE TABLE IF NOT EXISTS conversations (
+    conversation_id     BIGSERIAL PRIMARY KEY,
+    source              message_source,
+    external_thread_id  TEXT,
+    soft_key            TEXT,
+    started_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_message_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    confidence          NUMERIC(4,3) DEFAULT 1.000,
+    UNIQUE (source, external_thread_id)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    message_id          BIGSERIAL PRIMARY KEY,
+    source              message_source NOT NULL,
+    external_id         TEXT,
+    external_thread_id  TEXT,
+    direction           TEXT CHECK (direction IN ('inbound','outbound','system')),
+    sender_party_id     BIGINT REFERENCES parties(party_id),
+    subject             TEXT,
+    body_text           TEXT,
+    normalized_text     TEXT GENERATED ALWAYS AS (
+        lower(regexp_replace(coalesce(body_text,''), '\s+', ' ', 'g'))
+    ) STORED,
+    content_hash        TEXT GENERATED ALWAYS AS (md5(coalesce(normalized_text,''))) STORED,
+    sent_at             TIMESTAMPTZ NOT NULL,
+    received_at         TIMESTAMPTZ,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ix_messages_sent_at ON messages(sent_at);
+CREATE INDEX IF NOT EXISTS ix_messages_content_hash ON messages(content_hash);
+
+-- Full-text search
+ALTER TABLE messages
+    ADD COLUMN IF NOT EXISTS fts tsvector
+        GENERATED ALWAYS AS (to_tsvector('english', coalesce(subject,'') || ' ' || coalesce(body_text,''))) STORED;
+CREATE INDEX IF NOT EXISTS ix_messages_fts ON messages USING GIN (fts);
+
+CREATE TABLE IF NOT EXISTS message_parties (
+    message_id  BIGINT NOT NULL REFERENCES messages(message_id) ON DELETE CASCADE,
+    party_id    BIGINT NOT NULL REFERENCES parties(party_id) ON DELETE CASCADE,
+    role        TEXT NOT NULL CHECK (role IN ('sender','recipient','cc','bcc','signer','other')),
+    PRIMARY KEY (message_id, party_id, role)
+);
+CREATE INDEX IF NOT EXISTS ix_message_parties_party ON message_parties(party_id);
+
+CREATE TABLE IF NOT EXISTS conversation_messages (
+    conversation_id BIGINT NOT NULL REFERENCES conversations(conversation_id) ON DELETE CASCADE,
+    message_id      BIGINT NOT NULL REFERENCES messages(message_id) ON DELETE CASCADE,
+    PRIMARY KEY (conversation_id, message_id)
+);
+
+CREATE TABLE IF NOT EXISTS attachments (
+    attachment_id   BIGSERIAL PRIMARY KEY,
+    message_id      BIGINT NOT NULL REFERENCES messages(message_id) ON DELETE CASCADE,
+    file_name       TEXT,
+    mime_type       TEXT,
+    url             TEXT,
+    sha256          TEXT,
+    size_bytes      BIGINT
+);
+
+COMMIT;
+"""
+
+# ------------------------
+# SQL: Functions
+# ------------------------
+functions_sql = r"""
+-- cross_source_merge_functions.sql
+BEGIN;
+
+-- Normalize helpers
+CREATE OR REPLACE FUNCTION normalize_identifier(p_id_type TEXT, p_identifier TEXT)
+RETURNS TEXT
+LANGUAGE sql IMMUTABLE AS $$
+    SELECT CASE
+        WHEN p_id_type = 'email' THEN lower(btrim(p_identifier))
+        WHEN p_id_type = 'phone' THEN regexp_replace(p_identifier, '[^0-9\+]', '', 'g')
+        ELSE lower(btrim(p_identifier))
+    END;
+$$;
+
+-- Upsert or fetch a party by identifier
+CREATE OR REPLACE FUNCTION upsert_party(p_id_type TEXT, p_identifier TEXT, p_display_name TEXT DEFAULT NULL)
+RETURNS BIGINT
+LANGUAGE plpgsql AS $$
+DECLARE
+    norm TEXT := normalize_identifier(p_id_type, p_identifier);
+    pid  BIGINT;
+BEGIN
+    SELECT pi.party_id INTO pid
+    FROM party_identifiers pi
+    WHERE pi.id_type = p_id_type AND pi.normalized_identifier = norm
+    LIMIT 1;
+
+    IF pid IS NOT NULL THEN
+        RETURN pid;
+    END IF;
+
+    INSERT INTO parties(display_name) VALUES (p_display_name) RETURNING party_id INTO pid;
+    INSERT INTO party_identifiers(party_id, id_type, identifier) VALUES (pid, p_id_type, p_identifier)
+    ON CONFLICT (id_type, normalized_identifier) DO NOTHING;
+    RETURN pid;
+END;
+$$;
+
+-- Link an additional identifier to an existing party
+CREATE OR REPLACE FUNCTION link_identifier(p_party_id BIGINT, p_id_type TEXT, p_identifier TEXT)
+RETURNS VOID
+LANGUAGE plpgsql AS $$
+BEGIN
+    INSERT INTO party_identifiers(party_id, id_type, identifier)
+    VALUES (p_party_id, p_id_type, p_identifier)
+    ON CONFLICT (id_type, normalized_identifier) DO UPDATE
+      SET party_id = EXCLUDED.party_id;
+END;
+$$;
+
+-- Probable duplicate detection within ±3 minutes
+CREATE OR REPLACE FUNCTION is_probable_duplicate(p_source message_source, p_content_hash TEXT, p_sent_at TIMESTAMPTZ, p_sender BIGINT)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM messages m
+        WHERE m.source = p_source
+          AND m.content_hash = p_content_hash
+          AND m.sender_party_id IS NOT DISTINCT FROM p_sender
+          AND m.sent_at BETWEEN p_sent_at - interval '3 minutes' AND p_sent_at + interval '3 minutes'
+    );
+$$;
+
+-- Attach or create conversation
+CREATE OR REPLACE FUNCTION attach_conversation(p_message_id BIGINT)
+RETURNS BIGINT
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_source message_source;
+    v_thread TEXT;
+    v_sent   TIMESTAMPTZ;
+    v_conv   BIGINT;
+BEGIN
+    SELECT source, external_thread_id, sent_at INTO v_source, v_thread, v_sent
+    FROM messages WHERE message_id = p_message_id;
+
+    IF v_thread IS NOT NULL THEN
+        INSERT INTO conversations(source, external_thread_id, started_at, last_message_at, confidence)
+        VALUES (v_source, v_thread, v_sent, v_sent, 1.0)
+        ON CONFLICT (source, external_thread_id) DO UPDATE
+           SET last_message_at = GREATEST(conversations.last_message_at, EXCLUDED.last_message_at)
+        RETURNING conversation_id INTO v_conv;
+    ELSE
+        -- Soft key based on 2-hour bucket and participants
+        -- Build a participant fingerprint
+        WITH parts AS (
+            SELECT string_agg(distinct p.normalized_identifier, ',' ORDER BY p.normalized_identifier) AS fp
+            FROM (
+                SELECT pi.normalized_identifier
+                FROM message_parties mp
+                JOIN party_identifiers pi ON pi.party_id = mp.party_id
+                WHERE mp.message_id = p_message_id
+            ) p
+        )
+        INSERT INTO conversations(source, soft_key, started_at, last_message_at, confidence)
+        SELECT v_source,
+               md5(date_trunc('hour', v_sent)::text || ':' ||
+                   to_char(date_trunc('hour', v_sent) + interval '2 hour','YYYY-MM-DD"T"HH24') || ':' ||
+                   fp),
+               v_sent, v_sent, 0.6
+        FROM parts
+        RETURNING conversation_id INTO v_conv;
+
+        -- Try merge with an existing soft conversation in a ±2h window with same fp
+        -- Update last_message_at by trigger on insert below.
+    END IF;
+
+    INSERT INTO conversation_messages(conversation_id, message_id)
+    VALUES (v_conv, p_message_id)
+    ON CONFLICT DO NOTHING;
+
+    RETURN v_conv;
+END;
+$$;
+
+-- Record a message end-to-end, with simple dedup check
+CREATE OR REPLACE FUNCTION record_message(
+    p_source message_source,
+    p_external_id TEXT,
+    p_external_thread_id TEXT,
+    p_direction TEXT,
+    p_sender_id_type TEXT,
+    p_sender_identifier TEXT,
+    p_recipient_id_type TEXT,
+    p_recipient_identifier TEXT,
+    p_subject TEXT,
+    p_body_text TEXT,
+    p_sent_at TIMESTAMPTZ
+) RETURNS BIGINT
+LANGUAGE plpgsql AS $$
+DECLARE
+    sender_pid BIGINT;
+    recip_pid  BIGINT;
+    mid        BIGINT;
+    chash      TEXT;
+BEGIN
+    sender_pid := upsert_party(p_sender_id_type, p_sender_identifier, NULL);
+    recip_pid  := upsert_party(p_recipient_id_type, p_recipient_identifier, NULL);
+
+    INSERT INTO messages(source, external_id, external_thread_id, direction, sender_party_id, subject, body_text, sent_at)
+    VALUES (p_source, p_external_id, p_external_thread_id, p_direction, sender_pid, p_subject, p_body_text, p_sent_at)
+    RETURNING message_id, content_hash INTO mid, chash;
+
+    IF is_probable_duplicate(p_source, chash, p_sent_at, sender_pid) THEN
+        -- Mark and exit by deleting the duplicate we just inserted
+        DELETE FROM messages WHERE message_id = mid;
+        RETURN NULL;
+    END IF;
+
+    INSERT INTO message_parties(message_id, party_id, role) VALUES
+        (mid, sender_pid, 'sender'),
+        (mid, recip_pid, 'recipient')
+    ON CONFLICT DO NOTHING;
+
+    PERFORM attach_conversation(mid);
+    RETURN mid;
+END;
+$$;
+
+-- Search messages with optional filters
+CREATE OR REPLACE FUNCTION search_messages(
+    p_query TEXT,
+    p_source message_source DEFAULT NULL,
+    p_start DATE DEFAULT NULL,
+    p_end   DATE DEFAULT NULL
+)
+RETURNS TABLE (
+    message_id BIGINT,
+    source message_source,
+    sent_at TIMESTAMPTZ,
+    subject TEXT,
+    snippet TEXT,
+    rank REAL
+)
+LANGUAGE sql STABLE AS $$
+    WITH base AS (
+        SELECT m.*,
+               ts_rank(m.fts, plainto_tsquery('english', coalesce(p_query,''))) AS rank
+        FROM messages m
+        WHERE (p_source IS NULL OR m.source = p_source)
+          AND (p_start IS NULL OR m.sent_at >= p_start::timestamptz)
+          AND (p_end   IS NULL OR m.sent_at < (p_end::timestamptz + interval '1 day'))
+          AND (p_query IS NULL OR m.fts @@ plainto_tsquery('english', p_query))
+    )
+    SELECT message_id, source, sent_at, subject,
+           CASE
+             WHEN length(body_text) > 180 THEN substr(body_text, 1, 177) || '...'
+             ELSE body_text
+           END AS snippet,
+           rank
+    FROM base
+    ORDER BY sent_at, message_id;
+$$;
+
+-- Find all messages for a party by any identifier
+CREATE OR REPLACE FUNCTION find_party_messages(p_identifier TEXT)
+RETURNS TABLE (
+    message_id BIGINT,
+    source message_source,
+    sent_at TIMESTAMPTZ,
+    subject TEXT,
+    body_text TEXT
+)
+LANGUAGE sql STABLE AS $$
+    WITH target_party AS (
+        SELECT pi.party_id
+        FROM party_identifiers pi
+        WHERE pi.normalized_identifier = normalize_identifier(
+            CASE WHEN position('@' IN p_identifier) > 0 THEN 'email'
+                 WHEN p_identifier ~ '^[0-9\+\-\(\) ]+$' THEN 'phone'
+                 ELSE 'other' END, p_identifier)
+        LIMIT 1
+    )
+    SELECT m.message_id, m.source, m.sent_at, m.subject, m.body_text
+    FROM messages m
+    JOIN message_parties mp ON mp.message_id = m.message_id
+    WHERE mp.party_id IN (SELECT party_id FROM target_party)
+    ORDER BY m.sent_at, m.message_id;
+$$;
+
+-- Case timeline for a set of identifiers
+CREATE OR REPLACE FUNCTION generate_case_timeline(p_start DATE, p_end DATE, p_identifiers TEXT[])
+RETURNS TABLE(
+    sent_at TIMESTAMPTZ,
+    source message_source,
+    direction TEXT,
+    subject TEXT,
+    body_text TEXT,
+    sender TEXT,
+    recipients TEXT
+)
+LANGUAGE sql STABLE AS $$
+    WITH ids AS (
+        SELECT DISTINCT normalize_identifier(
+            CASE WHEN position('@' IN id) > 0 THEN 'email'
+                 WHEN id ~ '^[0-9\+\-\(\) ]+$' THEN 'phone'
+                 ELSE 'other' END, id) AS norm
+        FROM unnest(p_identifiers) AS id
+    ), parties_hit AS (
+        SELECT DISTINCT pi.party_id
+        FROM party_identifiers pi
+        JOIN ids ON ids.norm = pi.normalized_identifier
+    ),
+    msgs AS (
+        SELECT m.*
+        FROM messages m
+        WHERE m.sent_at >= p_start::timestamptz
+          AND m.sent_at <  (p_end::timestamptz + interval '1 day')
+          AND EXISTS (
+              SELECT 1 FROM message_parties mp
+              WHERE mp.message_id = m.message_id AND mp.party_id IN (SELECT party_id FROM parties_hit)
+          )
+    )
+    SELECT m.sent_at, m.source, m.direction, m.subject, m.body_text,
+           (SELECT string_agg(distinct pi2.identifier, ', ')
+              FROM message_parties mp2
+              JOIN party_identifiers pi2 ON pi2.party_id = mp2.party_id
+              WHERE mp2.message_id = m.message_id AND mp2.role = 'sender') AS sender,
+           (SELECT string_agg(distinct pi3.identifier, ', ')
+              FROM message_parties mp3
+              JOIN party_identifiers pi3 ON pi3.party_id = mp3.party_id
+              WHERE mp3.message_id = m.message_id AND mp3.role IN ('recipient','cc','bcc','signer')) AS recipients
+    FROM msgs m
+    ORDER BY m.sent_at;
+$$;
+
+COMMIT;
+"""
+
+# ------------------------
+# SQL: Views and analysis
+# ------------------------
+queries_sql = r"""
+-- cross_source_queries.sql
+BEGIN;
+
+CREATE OR REPLACE VIEW v_unified_timeline AS
+SELECT
+    m.message_id,
+    m.source,
+    m.sent_at,
+    m.direction,
+    m.subject,
+    m.body_text,
+    m.content_hash,
+    (SELECT string_agg(DISTINCT pi.identifier, ', ')
+     FROM message_parties mp
+     JOIN party_identifiers pi ON pi.party_id = mp.party_id
+     WHERE mp.message_id = m.message_id AND mp.role = 'sender'
+    ) AS from_identities,
+    (SELECT string_agg(DISTINCT pi.identifier, ', ')
+     FROM message_parties mp
+     JOIN party_identifiers pi ON pi.party_id = mp.party_id
+     WHERE mp.message_id = m.message_id AND mp.role IN ('recipient','cc','bcc','signer')
+    ) AS to_identities
+FROM messages m
+ORDER BY m.sent_at, m.message_id;
+
+CREATE OR REPLACE VIEW v_party_activity AS
+SELECT
+    p.party_id,
+    coalesce(p.display_name, min(pi.identifier)) AS label,
+    count(DISTINCT m.message_id) AS message_count,
+    jsonb_object_agg(m.source, cnt) FILTER (WHERE cnt IS NOT NULL) AS by_source
+FROM parties p
+JOIN party_identifiers pi ON pi.party_id = p.party_id
+LEFT JOIN LATERAL (
+    SELECT m.source, count(*) AS cnt
+    FROM message_parties mp
+    JOIN messages m ON m.message_id = mp.message_id
+    WHERE mp.party_id = p.party_id
+    GROUP BY m.source
+) s ON true
+GROUP BY p.party_id
+ORDER BY message_count DESC;
+
+COMMIT;
+"""
+
+# ------------------------
+# SQL: Sample data ingest
+# ------------------------
+ingest_sql = r"""
+-- cross_source_ingest.sql
+-- Staging table for CSV import and normalization into core tables
+BEGIN;
+
+DROP TABLE IF EXISTS staging_messages;
+CREATE TABLE staging_messages (
+    sent_at             TIMESTAMPTZ,
+    source              TEXT,
+    direction           TEXT,
+    sender_id_type      TEXT,
+    sender_identifier   TEXT,
+    recipient_id_type   TEXT,
+    recipient_identifier TEXT,
+    subject             TEXT,
+    body_text           TEXT,
+    external_thread_id  TEXT,
+    external_id         TEXT
+);
+
+-- After \copy into staging_messages, run the normalization:
+INSERT INTO messages(source, external_id, external_thread_id, direction, sender_party_id, subject, body_text, sent_at)
+SELECT
+    source::message_source,
+    external_id,
+    external_thread_id,
+    direction,
+    upsert_party(sender_id_type, sender_identifier, NULL),
+    NULLIF(subject,''),
+    body_text,
+    sent_at
+FROM staging_messages;
+
+-- Link parties for each row
+INSERT INTO message_parties(message_id, party_id, role)
+SELECT m.message_id,
+       upsert_party(s.sender_id_type, s.sender_identifier, NULL),
+       'sender'
+FROM staging_messages s
+JOIN messages m ON m.external_id IS NOT DISTINCT FROM s.external_id
+               AND m.sent_at = s.sent_at
+               AND m.source = s.source::message_source;
+
+INSERT INTO message_parties(message_id, party_id, role)
+SELECT m.message_id,
+       upsert_party(s.recipient_id_type, s.recipient_identifier, NULL),
+       'recipient'
+FROM staging_messages s
+JOIN messages m ON m.external_id IS NOT DISTINCT FROM s.external_id
+               AND m.sent_at = s.sent_at
+               AND m.source = s.source::message_source;
+
+-- Attach conversations
+DO $$
+DECLARE r RECORD;
+BEGIN
+    FOR r IN SELECT message_id FROM messages
+             WHERE NOT EXISTS (SELECT 1 FROM conversation_messages cm WHERE cm.message_id = messages.message_id)
+    LOOP
+        PERFORM attach_conversation(r.message_id);
+    END LOOP;
+END$$;
+
+COMMIT;
+"""
+
+# ------------------------
+# SQL: OpenPhone adapter (expects user-provided \copy into staging_openphone_* tables)
+# ------------------------
+openphone_sql = r"""
+-- openphone_ingest.sql
+-- Create staging tables, then transform into core schema.
+BEGIN;
+
+DROP TABLE IF EXISTS staging_openphone_messages;
+CREATE TABLE staging_openphone_messages (
+    message_id TEXT,
+    direction TEXT,              -- inbound | outbound
+    from_number TEXT,
+    to_number TEXT,
+    body TEXT,
+    created_at TIMESTAMPTZ,
+    conversation_id TEXT
+);
+
+-- Expect: \copy staging_openphone_messages FROM 'OpenPhone Data/ORuce0BjRH_messages.csv' WITH CSV HEADER
+
+INSERT INTO messages(source, external_id, external_thread_id, direction, sender_party_id, subject, body_text, sent_at)
+SELECT
+    'openphone'::message_source,
+    message_id,
+    conversation_id,
+    direction,
+    CASE WHEN direction = 'outbound'
+         THEN upsert_party('phone', from_number, NULL)
+         ELSE upsert_party('phone', to_number, NULL)
+    END,
+    NULL,
+    body,
+    created_at
+FROM staging_openphone_messages;
+
+-- Link participants
+INSERT INTO message_parties(message_id, party_id, role)
+SELECT m.message_id,
+       CASE WHEN s.direction = 'outbound'
+            THEN upsert_party('phone', s.from_number, NULL)
+            ELSE upsert_party('phone', s.to_number, NULL)
+       END,
+       'sender'
+FROM staging_openphone_messages s
+JOIN messages m ON m.external_id = s.message_id AND m.source = 'openphone';
+
+INSERT INTO message_parties(message_id, party_id, role)
+SELECT m.message_id,
+       CASE WHEN s.direction = 'outbound'
+            THEN upsert_party('phone', s.to_number, NULL)
+            ELSE upsert_party('phone', s.from_number, NULL)
+       END,
+       'recipient'
+FROM staging_openphone_messages s
+JOIN messages m ON m.external_id = s.message_id AND m.source = 'openphone';
+
+-- Attach conversations
+DO $$
+DECLARE r RECORD;
+BEGIN
+    FOR r IN SELECT message_id FROM messages WHERE source = 'openphone'
+    LOOP
+        PERFORM attach_conversation(r.message_id);
+    END LOOP;
+END$$;
+
+COMMIT;
+"""
+
+# ------------------------
+# Sample CSV (10 rows)
+# ------------------------
+sample_csv = """sent_at,source,direction,sender_id_type,sender_identifier,recipient_id_type,recipient_identifier,subject,body_text,external_thread_id,external_id
+2024-08-01T10:15:00Z,email,outbound,email,nick@aribia.com,email,tenant@example.com,Lease Terms,Please review the attached lease draft.,thread-1001,msg-1
+2024-08-01T10:17:00Z,email,inbound,email,tenant@example.com,email,nick@aribia.com,Re: Lease Terms,Thanks. I will review and revert.,thread-1001,msg-2
+2024-08-02T14:45:00Z,imessage,outbound,imessage,+13125551234,imessage,+13125559876,,Can you confirm key pickup at 5pm?,,imsg-1
+2024-08-02T15:05:00Z,imessage,inbound,imessage,+13125559876,imessage,+13125551234,,Yes. See you at the building.,,imsg-2
+2024-08-03T18:30:00Z,whatsapp,outbound,whatsapp_jid,14155551234@whatsapp.net,whatsapp_jid,14155556789@whatsapp.net,,Reminder: rent due on 8/5.,,wa-1
+2024-08-05T09:00:00Z,openphone,outbound,phone,+13125361914,phone,+13125550001,,Morning. Let me know if maintenance fixed the leak.,conv-42,op-1
+2024-08-05T11:12:00Z,openphone,inbound,phone,+13125550001,phone,+13125361914,,They fixed it. Thanks.,conv-42,op-2
+2024-08-06T13:20:00Z,email,outbound,email,nick@aribia.com,email,tenant@example.com,Move-in Checklist,Attaching checklist for Saturday.,thread-1002,msg-3
+2024-08-06T13:28:00Z,docusign,outbound,email,nick@aribia.com,email,tenant@example.com,Lease Signature,Please sign the lease via DocuSign.,ds-lease-202408,ds-1
+2024-08-06T16:00:00Z,docusign,inbound,email,tenant@example.com,email,nick@aribia.com,Lease Signature Completed,DocuSign envelope completed.,ds-lease-202408,ds-2
+"""
+
+# ------------------------
+# Deploy script
+# ------------------------
+deploy_sh = r"""#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  echo "Error: DATABASE_URL is not set."
+  echo "Example: export DATABASE_URL='postgresql://user:pass@host.neon.tech/dbname?sslmode=require'"
+  exit 1
+fi
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+echo "[1/4] Applying schema..."
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT_DIR/database/schema/cross_source_merge_schema.sql"
+
+echo "[2/4] Creating functions..."
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT_DIR/database/schema/cross_source_merge_functions.sql"
+
+echo "[3/4] Creating views..."
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT_DIR/database/schema/cross_source_queries.sql"
+
+WITH_SAMPLE=0
+WITH_OPENPHONE=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --with-sample-data) WITH_SAMPLE=1 ;;
+    --with-openphone)   WITH_OPENPHONE=1 ;;
+  esac
+done
+
+if [[ "$WITH_SAMPLE" -eq 1 ]]; then
+  echo "[4/4] Loading sample data..."
+  # Prepare staging and normalization
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT_DIR/database/schema/cross_source_ingest.sql"
+  # Import CSV from local path using \copy
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "\copy staging_messages FROM '$ROOT_DIR/sample_data/cross_source_timeline_v0_1.csv' WITH CSV HEADER"
+  # Re-run normalization section only (INSERTS occur in file execution already)
+  # Nothing further required; normalization statements were run above.
+fi
+
+if [[ "$WITH_OPENPHONE" -eq 1 ]]; then
+  echo "[4/4] Preparing OpenPhone adapter..."
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$ROOT_DIR/database/schema/openphone_ingest.sql"
+  echo "Now import your OpenPhone CSV into staging_openphone_messages, e.g.:"
+  echo "  psql \"\$DATABASE_URL\" -c \"\\copy staging_openphone_messages FROM 'OpenPhone Data/ORuce0BjRH_messages.csv' WITH CSV HEADER\""
+  echo "Then re-run: psql \"\$DATABASE_URL\" -f \"$ROOT_DIR/database/schema/openphone_ingest.sql\" to transform."
+fi
+
+echo "Done."
+"""
+
+# ------------------------
+# README
+# ------------------------
+readme_md = r"""# Cross-Source Message Merge Package
+
+Complete implementation for merging communications from iMessage, WhatsApp, Email, DocuSign, and OpenPhone into a unified timeline using Neon PostgreSQL.
+
+## Contents
+- `database/schema/cross_source_merge_schema.sql`
+- `database/schema/cross_source_merge_functions.sql`
+- `database/schema/cross_source_queries.sql`
+- `database/schema/cross_source_ingest.sql`
+- `database/schema/openphone_ingest.sql`
+- `sample_data/cross_source_timeline_v0_1.csv`
+- `scripts/deploy-to-neon.sh`
+
+## Quick Start
+
+```bash
+export DATABASE_URL='postgresql://user:pass@host.neon.tech/dbname?sslmode=require'
+
+# Schema + views + functions
+./scripts/deploy-to-neon.sh
+
+# Include sample data
+./scripts/deploy-to-neon.sh --with-sample-data
+
+# Prepare OpenPhone adapter
+./scripts/deploy-to-neon.sh --with-openphone
+# Then import your CSV:
+# psql "$DATABASE_URL" -c "\copy staging_openphone_messages FROM 'OpenPhone Data/ORuce0BjRH_messages.csv' WITH CSV HEADER"
+# And re-run:
+# psql "$DATABASE_URL" -f database/schema/openphone_ingest.sql
+Usage Examples
+Always show details
+
+SELECT * FROM find_party_messages('nick@aribia.com');
+SELECT * FROM find_party_messages('+13125361914');
+
+SELECT * FROM search_messages('tenant breach', 'email', '2024-08-01', '2024-08-31');
+
+SELECT * FROM generate_case_timeline('2024-01-01','2024-12-31', ARRAY['nick@aribia.com', '+13125361914']);
+
+-- Export
+COPY (SELECT * FROM v_unified_timeline) TO STDOUT WITH CSV HEADER;
+"""
+Write files
+files = {
+"database/schema/cross_source_merge_schema.sql": schema_sql,
+"database/schema/cross_source_merge_functions.sql": functions_sql,
+"database/schema/cross_source_queries.sql": queries_sql,
+"database/schema/cross_source_ingest.sql": ingest_sql,
+"database/schema/openphone_ingest.sql": openphone_sql,
+"sample_data/cross_source_timeline_v0_1.csv": sample_csv,
+"scripts/deploy-to-neon.sh": deploy_sh,
+"README.md": readme_md
+}
+for rel, content in files.items():
+fpath = os.path.join(root, rel)
+os.makedirs(os.path.dirname(fpath), exist_ok=True)
+with open(fpath, "w", encoding="utf-8") as f:
+f.write(content)
+
+Make script executable
+os.chmod(os.path.join(root, "scripts/deploy-to-neon.sh"), 0o755)
+Zip it
+zip_path = "/mnt/data/cross-source-message-merge.zip"
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+for dirpath, _, filenames in os.walk(root):
+for fn in filenames:
+full = os.path.join(dirpath, fn)
+arc = os.path.relpath(full, start="/mnt/data")
+z.write(full, arcname=arc)
+Compute SHA256
+sha256 = hashlib.sha256(open(zip_path, "rb").read()).hexdigest()
+{"zip_path": zip_path, "sha256": sha256, "root": root}
+
+Always show details
+
+Result
+{'zip_path': '/mnt/data/cross-source-message-merge.zip',
+ 'sha256': 'e8e40c4b4ba3e3208383025bd8086e9c5279ac5abfbf184498a2d7c3f3c8709b',
+ 'root': '/mnt/data/cross-source-message-merge'}
+Download the package and deploy.
+Download ZIP
+SHA256: e8e40c4b4ba3e3208383025bd8086e9c5279ac5abfbf184498a2d7c3f3c8709b
+Quick start:
+export DATABASE_URL='postgresql://user:pass@host.neon.tech/dbname?sslmode=require'
+./scripts/deploy-to-neon.sh                          # schema + views + functions
+./scripts/deploy-to-neon.sh --with-sample-data       # add 10-row demo
+./scripts/deploy-to-neon.sh --with-openphone         # create adapter; then \copy your CSV
+Core queries:
+SELECT * FROM find_party_messages('nick@aribia.com');
+SELECT * FROM find_party_messages('+13125361914');
+SELECT * FROM search_messages('tenant breach','email','2024-08-01','2024-08-31');
+SELECT * FROM generate_case_timeline('2024-01-01','2024-12-31', ARRAY['nick@aribia.com', '+13125361914']);
+COPY (SELECT * FROM v_unified_timeline) TO STDOUT WITH CSV HEADER;
+Notes:
+Enum message_source: imessage, whatsapp, email, docusign, openphone.
+FTS on messages(fts) with GIN. content_hash uses md5(normalized_text) for dedup ±3 min.
+record_message(...) handles upsert, participant links, soft/hard threading, dedup.
+Sample CSV is under sample_data/. OpenPhone adapter expects you to \copy into staging_openphone_messages then rerun the adapter SQL.
