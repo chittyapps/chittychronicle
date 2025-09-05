@@ -1,0 +1,11 @@
+sent_at,source,direction,sender_id_type,sender_identifier,recipient_id_type,recipient_identifier,subject,body_text,external_thread_id,external_id
+2024-08-01T10:15:00Z,email,outbound,email,nick@aribia.com,email,tenant@example.com,Lease Terms,Please review the attached lease draft.,thread-1001,msg-1
+2024-08-01T10:17:00Z,email,inbound,email,tenant@example.com,email,nick@aribia.com,Re: Lease Terms,Thanks. I will review and revert.,thread-1001,msg-2
+2024-08-02T14:45:00Z,imessage,outbound,imessage,+13125551234,imessage,+13125559876,,Can you confirm key pickup at 5pm?,,imsg-1
+2024-08-02T15:05:00Z,imessage,inbound,imessage,+13125559876,imessage,+13125551234,,Yes. See you at the building.,,imsg-2
+2024-08-03T18:30:00Z,whatsapp,outbound,whatsapp_jid,14155551234@whatsapp.net,whatsapp_jid,14155556789@whatsapp.net,,Reminder: rent due on 8/5.,,wa-1
+2024-08-05T09:00:00Z,openphone,outbound,phone,+13125361914,phone,+13125550001,,Morning. Let me know if maintenance fixed the leak.,conv-42,op-1
+2024-08-05T11:12:00Z,openphone,inbound,phone,+13125550001,phone,+13125361914,,They fixed it. Thanks.,conv-42,op-2
+2024-08-06T13:20:00Z,email,outbound,email,nick@aribia.com,email,tenant@example.com,Move-in Checklist,Attaching checklist for Saturday.,thread-1002,msg-3
+2024-08-06T13:28:00Z,docusign,outbound,email,nick@aribia.com,email,tenant@example.com,Lease Signature,Please sign the lease via DocuSign.,ds-lease-202408,ds-1
+2024-08-06T16:00:00Z,docusign,inbound,email,tenant@example.com,email,nick@aribia.com,Lease Signature Completed,DocuSign envelope completed.,ds-lease-202408,ds-2
