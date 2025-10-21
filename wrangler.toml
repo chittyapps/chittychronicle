@@ -1,13 +1,13 @@
 # Cloudflare Workers/Pages configuration for ChittyChronicle
 
-name = "chittytimeline"
+name = "chittychronicle"
 compatibility_date = "2024-01-01"
 
 # Production configuration
 [env.production]
-name = "chittytimeline"
+name = "chittychronicle"
 routes = [
-  { pattern = "timeline.chitty.com/*", zone_name = "chitty.com" }
+  { pattern = "chronicle.chitty.cc/*", zone_name = "chitty.cc" }
 ]
 
 # Cloudflare Pages configuration
@@ -32,19 +32,19 @@ id = "your-kv-namespace-id"
 # D1 Database binding (if using Cloudflare D1 instead of external PostgreSQL)
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "chittytimeline"
+database_name = "chittychronicle"
 database_id = "your-d1-database-id"
 
 # R2 bucket for file storage
 [[env.production.r2_buckets]]
 binding = "UPLOADS"
-bucket_name = "chittytimeline-uploads"
+bucket_name = "chittychronicle-uploads"
 
 # Preview/staging environment
 [env.preview]
-name = "chittytimeline-preview"
+name = "chittychronicle-preview"
 routes = [
-  { pattern = "preview.timeline.chitty.com/*", zone_name = "chitty.com" }
+  { pattern = "preview.chronicle.chitty.cc/*", zone_name = "chitty.cc" }
 ]
 
 [env.preview.vars]
@@ -52,7 +52,7 @@ NODE_ENV = "staging"
 
 # Development environment
 [env.development]
-name = "chittytimeline-dev"
+name = "chittychronicle-dev"
 vars = { NODE_ENV = "development" }
 
 # Cloudflare Pages Functions (serverless API endpoints)
