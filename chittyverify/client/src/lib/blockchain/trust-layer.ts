@@ -1,15 +1,21 @@
 /**
  * ChittyChain Trust Layer - User Verification and Trust System
  * Ensures evidence is analyzed and verified before minting
+ *
+ * UPDATED: ChittyID Phase 2 Integration
+ * - Uses mintId() for fact IDs and blockchain anchoring
+ * - Zero Math.random() usage
  */
+
+import { mintId } from "../mint-id";
 
 export enum SourceTier {
   SOCIAL_MEDIA = "SOCIAL_MEDIA",
-  NEWS_OUTLET = "NEWS_OUTLET", 
+  NEWS_OUTLET = "NEWS_OUTLET",
   DIRECT_TESTIMONY = "DIRECT_TESTIMONY",
   EXPERT_WITNESS = "EXPERT_WITNESS",
   GOVERNMENT = "GOVERNMENT",
-  SELF_AUTHENTICATING = "SELF_AUTHENTICATING"
+  SELF_AUTHENTICATING = "SELF_AUTHENTICATING",
 }
 
 export const SOURCE_WEIGHTS: Record<SourceTier, number> = {
@@ -52,12 +58,12 @@ export class ChittyChainTrustLayer {
   private trustTiers = {
     SELF_AUTHENTICATING: { weight: 1.0, autoMint: true },
     GOVERNMENT: { weight: 0.95, autoMint: true },
-    FINANCIAL_INSTITUTION: { weight: 0.90, autoMint: false },
+    FINANCIAL_INSTITUTION: { weight: 0.9, autoMint: false },
     INDEPENDENT_THIRD_PARTY: { weight: 0.85, autoMint: false },
-    BUSINESS_RECORDS: { weight: 0.80, autoMint: false },
+    BUSINESS_RECORDS: { weight: 0.8, autoMint: false },
     FIRST_PARTY_ADVERSE: { weight: 0.75, autoMint: false },
-    FIRST_PARTY_FRIENDLY: { weight: 0.60, autoMint: false },
-    UNCORROBORATED_PERSON: { weight: 0.40, autoMint: false }
+    FIRST_PARTY_FRIENDLY: { weight: 0.6, autoMint: false },
+    UNCORROBORATED_PERSON: { weight: 0.4, autoMint: false },
   };
 
   async analyzeEvidence(evidence: any): Promise<TrustAnalysis> {
@@ -68,15 +74,16 @@ export class ChittyChainTrustLayer {
         average: 0,
         min: 1,
         max: 0,
-        aboveThreshold: 0
+        aboveThreshold: 0,
       },
       concerns: [],
       recommendations: [],
-      overallScore: 0
+      overallScore: 0,
     };
 
     // Calculate base trust score from tier
-    const tierConfig = this.trustTiers[evidence.tier as keyof typeof this.trustTiers];
+    const tierConfig =
+      this.trustTiers[evidence.tier as keyof typeof this.trustTiers];
     if (!tierConfig) {
       analysis.concerns.push(`Unknown tier: ${evidence.tier}`);
       analysis.overallScore = 0;
@@ -88,7 +95,7 @@ export class ChittyChainTrustLayer {
     analysis.weightAnalysis.average = evidence.weight || tierConfig.weight;
     analysis.weightAnalysis.min = analysis.weightAnalysis.average;
     analysis.weightAnalysis.max = analysis.weightAnalysis.average;
-    
+
     if (analysis.weightAnalysis.average >= 0.85) {
       analysis.weightAnalysis.aboveThreshold = 1;
     }
@@ -111,40 +118,52 @@ export class ChittyChainTrustLayer {
     return [];
   }
 
-  async requestMintingConsent(artifacts: any[], options: any = {}): Promise<{
+  async requestMintingConsent(
+    artifacts: any[],
+    options: any = {},
+  ): Promise<{
     approved: boolean;
     consentId: string;
     signature?: any;
     trustScore: number;
     record: any;
   }> {
-    console.log(`🔐 ChittyChain Minting Consent Required for ${artifacts.length} artifacts`);
-    
+    console.log(
+      `🔐 ChittyChain Minting Consent Required for ${artifacts.length} artifacts`,
+    );
+
     // Display trust analysis
     for (const artifact of artifacts) {
       const analysis = await this.analyzeEvidence(artifact);
-      console.log(`Artifact ${artifact.id}: Trust Score ${analysis.overallScore}`);
+      console.log(
+        `Artifact ${artifact.id}: Trust Score ${analysis.overallScore}`,
+      );
     }
 
     // Auto-approve high trust artifacts for demo
-    const avgTrustScore = artifacts.reduce((sum, a) => {
-      const tierConfig = this.trustTiers[a.tier as keyof typeof this.trustTiers];
-      return sum + (tierConfig?.weight || 0);
-    }, 0) / artifacts.length;
+    const avgTrustScore =
+      artifacts.reduce((sum, a) => {
+        const tierConfig =
+          this.trustTiers[a.tier as keyof typeof this.trustTiers];
+        return sum + (tierConfig?.weight || 0);
+      }, 0) / artifacts.length;
+
+    // Mint proper ChittyID for consent record
+    const consentId = await mintId("CONSENT", "minting-consent");
 
     const consentRecord = {
-      id: this.generateId(),
+      id: consentId,
       timestamp: new Date().toISOString(),
       artifacts: artifacts,
       trustScore: avgTrustScore,
-      status: avgTrustScore >= 0.85 ? 'approved' : 'requires_review'
+      status: avgTrustScore >= 0.85 ? "approved" : "requires_review",
     };
 
     return {
       approved: avgTrustScore >= 0.85,
       consentId: consentRecord.id,
       trustScore: avgTrustScore,
-      record: consentRecord
+      record: consentRecord,
     };
   }
 
@@ -163,14 +182,17 @@ export class ChittyChainTrustLayer {
     const sealBonus = evidence.seal_number ? 0.1 : 0;
     const notaryBonus = evidence.notary_id ? 0.1 : 0;
     const clerkBonus = evidence.clerk_signature ? 0.2 : 0;
-    
+
     const combined_weight = Math.min(
       1.0,
-      baseWeight + custodyBonus + sealBonus + notaryBonus + clerkBonus
+      baseWeight + custodyBonus + sealBonus + notaryBonus + clerkBonus,
     );
 
+    // Mint proper ChittyID for evidence submission
+    const evidenceId = await mintId("EVNT", "evidence-submission");
+
     const fullEvidence = {
-      id: this.generateId(),
+      id: evidenceId,
       ...evidence,
       combined_weight,
     };
@@ -196,21 +218,28 @@ export class ChittyChainTrustLayer {
     weight: number;
     supporting_evidence: string[];
   }): Promise<ChittyChainFact> {
+    // Mint proper ChittyIDs for fact and blockchain anchoring
+    const factId = await mintId("FACT", "trust-layer-fact");
+    const txHashId = await mintId("TXHASH", "blockchain-tx");
+    const blockAnchorId = await mintId("ANCHOR", "blockchain-block");
+
     const fullFact: ChittyChainFact = {
-      id: this.generateId(),
+      id: factId,
       ...fact,
       timestamp: Date.now(),
-      block_number: Math.floor(Math.random() * 1000000),
-      transaction_hash: `0x${this.generateId()}`
+      block_number: parseInt(
+        blockAnchorId.split("-").pop() || Date.now().toString(),
+      ),
+      transaction_hash: `0x${txHashId}`,
     };
 
-    console.log(`✅ Minted ChittyChain fact: ${fullFact.id} with weight ${fullFact.weight}`);
+    console.log(
+      `✅ Minted ChittyChain fact: ${fullFact.id} with weight ${fullFact.weight}`,
+    );
     return fullFact;
   }
 
-  private generateId(): string {
-    return Math.random().toString(36).substring(2, 15);
-  }
+  // Removed: generateId() - replaced with mintId() from ../mint-id
 }
 
 export const trustLayer = new ChittyChainTrustLayer();

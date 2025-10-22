@@ -345,7 +345,7 @@ class CAOBillMCP {
       caseId
     } = args;
 
-    const executionId = crypto.randomUUID();
+    const executionId = await mintChittyID("APP", "ENTITY");
     const results: any = {
       executionId,
       retrievalResults: {},

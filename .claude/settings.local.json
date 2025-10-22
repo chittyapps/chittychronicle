@@ -7,7 +7,18 @@
       "Bash(curl \"http://localhost:5000/api/timeline/search?caseId=0d5c3985-8e46-4fe3-a00d-a0f2cd7e11a6&query=complaint\")",
       "Bash(npm run dev)",
       "Bash(PORT=5001 npm run dev)",
-      "Bash(curl -s http://localhost:5001/api/health)"
+      "Bash(curl -s http://localhost:5001/api/health)",
+      "Bash(/Users/nb/.claude/projects/-/chittychat/slash-commands-extended.sh sync)",
+      "Read(//Users/nb/.claude/projects/**)",
+      "Read(//Users/nb/.claude/**)",
+      "Bash(find /Users/nb/.claude/projects/-/CHITTYOS/chittyos-services -maxdepth 1 -type d -exec basename {})",
+      "Bash(xargs basename -a)",
+      "Bash(/Users/nb/.claude/projects/-/chittychat/slash-commands-extended.sh sync sessions)",
+      "Bash(/Users/nb/.claude/projects/-/chittychat/chitty-sync sessions)",
+      "Bash(/Users/nb/.claude/projects/-/chittychat/chitty-sync sessionsync)",
+      "Bash(/Users/nb/.claude/projects/-/chittychat/chitty-sync projectsync)",
+      "Bash(node start-project-sync.mjs)",
+      "Bash(/Users/nb/.claude/projects/-/chittychat/chitty-sync topicsync)"
     ],
     "deny": [],
     "ask": []

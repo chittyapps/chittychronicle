@@ -94,7 +94,10 @@ export interface IStorage {
   // Contradiction operations
   getTimelineContradictions(entryId: string): Promise<TimelineContradiction[]>;
   createTimelineContradiction(contradictionData: InsertTimelineContradiction): Promise<TimelineContradiction>;
-  
+  getContradictionById(id: string): Promise<TimelineContradiction | undefined>;
+  updateContradiction(id: string, updates: Partial<InsertTimelineContradiction>): Promise<TimelineContradiction | undefined>;
+  resolveContradiction(id: string, resolvedBy: string, resolution: string): Promise<void>;
+
   // Search and analysis
   searchTimelineEntries(caseId: string, query: string): Promise<TimelineEntry[]>;
   getAllTimelineEntries(): Promise<TimelineEntry[]>;
@@ -387,6 +390,41 @@ export class DatabaseStorage implements IStorage {
       .values(contradictionData)
       .returning();
     return contradiction;
+  }
+
+  async getContradictionById(id: string): Promise<TimelineContradiction | undefined> {
+    const [contradiction] = await db
+      .select()
+      .from(timelineContradictions)
+      .where(eq(timelineContradictions.id, id));
+    return contradiction;
+  }
+
+  async updateContradiction(
+    id: string,
+    updates: Partial<InsertTimelineContradiction>
+  ): Promise<TimelineContradiction | undefined> {
+    const [updated] = await db
+      .update(timelineContradictions)
+      .set(updates)
+      .where(eq(timelineContradictions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async resolveContradiction(
+    id: string,
+    resolvedBy: string,
+    resolution: string
+  ): Promise<void> {
+    await db
+      .update(timelineContradictions)
+      .set({
+        resolution,
+        resolvedBy,
+        resolvedDate: new Date(),
+      })
+      .where(eq(timelineContradictions.id, id));
   }
 
   // Search and analysis

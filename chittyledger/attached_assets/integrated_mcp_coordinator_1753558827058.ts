@@ -305,7 +305,7 @@ class ChittyOSMCPCoordinator {
       create_evidence = false
     } = args;
 
-    const executionId = crypto.randomUUID();
+    const executionId = await mintChittyID("APP", "ENTITY");
     const execution: SecureExecution = {
       id: executionId,
       user_id,
@@ -490,7 +490,7 @@ Provide analysis of:
         {
           type: 'text',
           text: JSON.stringify({
-            comparison_id: crypto.randomUUID(),
+            comparison_id: await mintChittyID("APP", "ENTITY"),
             standard_execution: standardResult.execution_id,
             fortress_execution: fortressResult.execution_id,
             analysis_execution: analysis?.execution_id,
@@ -630,12 +630,12 @@ Provide analysis of:
 
   private async createEvidenceRecord(execution: SecureExecution): Promise<string> {
     console.log('Creating evidence for execution:', execution.id);
-    return crypto.randomUUID();
+    return await mintChittyID("APP", "ENTITY");
   }
 
   private async createEvidencePackage(execution: SecureExecution, caseId?: string, includeChainFacts: boolean = true, format: string = 'json') {
     return {
-      package_id: crypto.randomUUID(),
+      package_id: await mintChittyID("APP", "ENTITY"),
       execution_id: execution.id,
       case_id: caseId,
       format,
@@ -646,7 +646,7 @@ Provide analysis of:
 
   private async performSecurityAudit(executionIds: string[], auditLevel: string, includeSignatures: boolean) {
     return {
-      audit_id: crypto.randomUUID(),
+      audit_id: await mintChittyID("APP", "ENTITY"),
       level: auditLevel,
       executions_audited: executionIds.length,
       findings: [],
@@ -657,7 +657,7 @@ Provide analysis of:
 
   private async verifyChainFacts(factIds: string[], verifySignatures: boolean, crossReference: boolean) {
     return {
-      verification_id: crypto.randomUUID(),
+      verification_id: await mintChittyID("APP", "ENTITY"),
       facts_verified: factIds.length,
       all_valid: true,
       verification_completed_at: new Date().toISOString()
@@ -666,7 +666,7 @@ Provide analysis of:
 
   private async orchestrateExecutives(task: string, executives: string[], securityRequired: boolean, evidenceTracking: boolean) {
     return {
-      orchestration_id: crypto.randomUUID(),
+      orchestration_id: await mintChittyID("APP", "ENTITY"),
       task,
       executives_involved: executives,
       security_level: securityRequired ? 'fortress' : 'standard',

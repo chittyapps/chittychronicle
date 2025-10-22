@@ -725,7 +725,7 @@ Return structured JSON with extracted data.
 
   private async createEvidencePackage(email: EmailBill, extractedData: any, processingResult: any) {
     // Would create evidence package
-    return { evidenceId: crypto.randomUUID() };
+    return { evidenceId: await mintChittyID("APP", "ENTITY") };
   }
 
   async start() {
