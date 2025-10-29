@@ -1,0 +1,55 @@
+# Upstream Platform Tracking
+# Manages relationship between CFD deployment and platform codebase
+
+upstream:
+  platform: "chittychronicle"
+  repository: "https://github.com/chittyapps/chittychronicle"
+  branch: "main"
+  commit: "f9635c2"  # Latest: Add comprehensive deployment documentation for Cloudflare
+
+# Synchronization Strategy
+sync:
+  strategy: "git-submodule"
+  path: "upstream/"
+  auto_sync: false
+  manual_review_required: true
+
+# Version Tracking
+version:
+  platform: "1.0.0"
+  deployment: "1.0.0"
+  last_sync: "2025-10-29"
+
+# Customization Approach
+customization:
+  type: "config-and-extend"
+  override_platform: false
+  extend_with_custom: true
+  custom_path: "custom/"
+
+# Update Policy
+updates:
+  strategy: "manual-approval"
+  breaking_changes: "require-review"
+  security_patches: "auto-apply"
+  feature_updates: "manual-approval"
+
+# Merge Strategy
+merge:
+  conflicts_resolution: "favor-custom"
+  config_precedence: "deployment-config"
+  code_precedence: "upstream-platform"
+
+# Testing Requirements
+testing:
+  test_before_merge: true
+  regression_tests: true
+  integration_tests: true
+  legal_workflow_tests: true
+
+# Rollback Capability
+rollback:
+  enabled: true
+  strategy: "git-revert"
+  backup_required: true
+  validation_required: true

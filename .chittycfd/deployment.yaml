@@ -1,0 +1,189 @@
+# Multi-Environment Deployment Configuration
+# Defines deployment strategies across development, staging, and production
+
+deployment:
+  name: "aribia-chronicle"
+  version: "1.0.0"
+  type: "case-specific-legal-platform"
+
+# Environment Definitions
+environments:
+  development:
+    enabled: true
+    auto_deploy: true
+    config_file: "config/development.yaml"
+    database: "neon-dev"
+    agents:
+      auto_start: true
+      debug_mode: true
+    features:
+      mock_ai_analysis: false
+      test_data_seeding: true
+      hot_reload: true
+
+  staging:
+    enabled: true
+    auto_deploy: false
+    config_file: "config/staging.yaml"
+    database: "neon-staging"
+    agents:
+      auto_start: true
+      debug_mode: false
+    features:
+      mock_ai_analysis: false
+      test_data_seeding: false
+      hot_reload: false
+    validation:
+      required: true
+      smoke_tests: true
+      integration_tests: true
+
+  production:
+    enabled: true
+    auto_deploy: false
+    config_file: "config/production.yaml"
+    database: "neon-production"
+    agents:
+      auto_start: true
+      debug_mode: false
+      monitoring: true
+      alerting: true
+    features:
+      mock_ai_analysis: false
+      test_data_seeding: false
+      hot_reload: false
+    validation:
+      required: true
+      smoke_tests: true
+      integration_tests: true
+      security_scan: true
+      legal_compliance_check: true
+    approval:
+      required: true
+      approvers: ["legal-team", "tech-lead"]
+    rollback:
+      strategy: "instant"
+      backup_required: true
+
+# Deployment Workflow
+workflow:
+  steps:
+    - name: "validate-cfd-compliance"
+      required: true
+      script: "deploy/validate-cfd.sh"
+
+    - name: "resolve-secrets"
+      required: true
+      script: "deploy/resolve-secrets.sh"
+      secret_provider: "1password"
+
+    - name: "apply-configuration"
+      required: true
+      script: "deploy/apply-config.sh"
+      args: ["${ENVIRONMENT}"]
+
+    - name: "deploy-custom-modules"
+      required: true
+      script: "deploy/apply-custom.sh"
+
+    - name: "database-migration"
+      required: true
+      script: "npm run db:push"
+
+    - name: "initialize-agents"
+      required: true
+      script: "deploy/init-agents.sh"
+
+    - name: "smoke-tests"
+      required: true
+      script: "npm run test:smoke"
+
+    - name: "integration-tests"
+      required: false
+      environments: ["staging", "production"]
+      script: "npm run test:integration"
+
+    - name: "start-services"
+      required: true
+      script: "npm run start"
+
+    - name: "health-check"
+      required: true
+      script: "deploy/health-check.sh"
+      timeout: 60
+      retry: 3
+
+# Secret Management
+secrets:
+  provider: "1password"
+  vault: "ARIBIA_LEGAL"
+  items:
+    - name: "NEON_DATABASE_URL"
+      op_path: "op://Private/NEON_DATABASE_STRINGS/arias_v_bianchi_main_db"
+    - name: "ANTHROPIC_API_KEY"
+      op_path: "op://Private/ANTHROPIC_API_KEY/credential"
+    - name: "CHITTYID_SERVICE_TOKEN"
+      op_path: "op://Private/CHITTYID_SERVICE_TOKEN/credential"
+    - name: "CHITTYCHAIN_API_KEY"
+      op_path: "op://Private/CHITTYCHAIN_API_KEY/credential"
+    - name: "SESSION_SECRET"
+      op_path: "op://Private/CHITTYCHRONICLE_SESSION_SECRET/password"
+
+# Monitoring and Alerting
+monitoring:
+  enabled: true
+  prometheus: true
+  grafana: true
+  custom_dashboards:
+    - "agent-performance"
+    - "evidence-processing"
+    - "contradiction-detection"
+    - "case-timeline"
+
+alerting:
+  enabled: true
+  channels:
+    - type: "chittybeacon"
+      priority: "high"
+    - type: "email"
+      recipients: ["legal@aribia.com"]
+  conditions:
+    - name: "agent-failure"
+      threshold: 1
+      action: "restart-agent"
+    - name: "evidence-processing-backlog"
+      threshold: 100
+      action: "scale-up"
+    - name: "deadline-approaching"
+      threshold: "24h"
+      action: "alert-legal-team"
+
+# Scaling Configuration
+scaling:
+  auto_scale: true
+  min_instances: 1
+  max_instances: 5
+  scale_up_threshold:
+    cpu: 80
+    memory: 85
+    queue_size: 50
+  scale_down_threshold:
+    cpu: 30
+    memory: 40
+    queue_size: 10
+
+# Backup and Recovery
+backup:
+  enabled: true
+  frequency: "daily"
+  retention: "90d"
+  targets:
+    - database
+    - evidence_files
+    - configuration
+    - agent_state
+
+recovery:
+  rto: "1h"  # Recovery Time Objective
+  rpo: "15m"  # Recovery Point Objective
+  strategy: "active-passive"
