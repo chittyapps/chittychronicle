@@ -26,10 +26,10 @@ check_file() {
     else
         if [ "$required" = true ]; then
             echo -e "${RED}✗${NC} $file (REQUIRED)"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
         else
             echo -e "${YELLOW}⚠${NC} $file (optional)"
-            ((WARNINGS++))
+            WARNINGS=$((WARNINGS+1))
         fi
     fi
 }
