@@ -26,7 +26,12 @@
     "cfd:validate": "bash deploy/validate-cfd.sh",
     "cfd:setup": "bash deploy/setup.sh production",
     "config:apply": "bash deploy/apply-config.sh production",
-    "evidence:organize": "tsx custom/importers/marie-kondo-evidence-importer.ts"
+    "evidence:organize": "tsx custom/importers/marie-kondo-evidence-importer.ts",
+    "cf:setup": "bash deploy/cloudflare-setup.sh production",
+    "cf:deploy": "bash deploy/cloudflare-deploy.sh production",
+    "cf:deploy:staging": "bash deploy/cloudflare-deploy.sh staging",
+    "cf:logs": "wrangler tail --env=production --format=pretty",
+    "cf:metrics": "wrangler metrics --env=production"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
