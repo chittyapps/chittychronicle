@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚀 SOTA Upgrade Initiative (November 2025)
+
+**Status**: Planning phase - Pending approval
+**Documentation**: See `/docs/` for detailed upgrade plans
+
+ChittyChronicle is undergoing a major upgrade to state-of-the-art (SOTA) legal document intelligence capabilities. This will transform the system from basic document management to intelligent legal reasoning with semantic search, automated classification, relationship discovery, and predictive analytics.
+
+**Key Documentation**:
+- **[Executive Summary](docs/EXECUTIVE_SUMMARY_SOTA_UPGRADE.md)** - High-level overview, ROI analysis, decision framework
+- **[Implementation Plan](docs/SOTA_UPGRADE_IMPLEMENTATION_PLAN.md)** - Detailed Phase 1 technical specification
+- **[Roadmap](docs/ROADMAP_SOTA_UPGRADE.md)** - 5-phase rollout plan (Nov 2025 - Mar 2027)
+
+**Phase 1 Highlights** (8 weeks, Jan 2026 target):
+- Vector embeddings with pgvector (Legal-BERT)
+- Hybrid search (60% semantic + 40% keyword)
+- RAG-powered document Q&A
+- 50-70% improvement in search relevance
+- Investment: $22,500-45,500 dev + $250-500/month ongoing
+
+When working on SOTA upgrade features, always reference the detailed implementation plans in `/docs/`.
+
 ## Project Overview
 
 ChittyChronicle is a legal timeline management system for evidentiary tracking and litigation support. Built with TypeScript/React frontend, Express backend, PostgreSQL database via Drizzle ORM, and ChittyID authentication.
