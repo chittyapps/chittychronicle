@@ -8,6 +8,10 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
+    "test": "node --test tests/phase1-integration.test.ts",
+    "test:watch": "node --test --watch tests/phase1-integration.test.ts",
+    "validate:staging": "./scripts/validate-deployment.sh staging",
+    "validate:production": "./scripts/validate-deployment.sh production",
     "db:push": "drizzle-kit push",
     "registry:register": "node scripts/registry/register.js",
     "registry:local:scan": "node scripts/registry/local-scan.js",
@@ -26,7 +30,10 @@
     "cfd:validate": "bash deploy/validate-cfd.sh",
     "cfd:setup": "bash deploy/setup.sh production",
     "config:apply": "bash deploy/apply-config.sh production",
-    "evidence:organize": "tsx custom/importers/marie-kondo-evidence-importer.ts"
+    "evidence:organize": "tsx custom/importers/marie-kondo-evidence-importer.ts",
+    "embeddings:generate": "tsx scripts/generate-embeddings.ts",
+    "embeddings:coverage": "tsx scripts/generate-embeddings.ts --coverage",
+    "embeddings:case": "tsx scripts/generate-embeddings.ts --case-id"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
