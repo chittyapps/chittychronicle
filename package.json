@@ -31,6 +31,11 @@
     "cfd:setup": "bash deploy/setup.sh production",
     "config:apply": "bash deploy/apply-config.sh production",
     "evidence:organize": "tsx custom/importers/marie-kondo-evidence-importer.ts",
+    "cf:setup": "bash deploy/cloudflare-setup.sh production",
+    "cf:deploy": "bash deploy/cloudflare-deploy.sh production",
+    "cf:deploy:staging": "bash deploy/cloudflare-deploy.sh staging",
+    "cf:logs": "wrangler tail --env=production --format=pretty",
+    "cf:metrics": "wrangler metrics --env=production"
     "embeddings:generate": "tsx scripts/generate-embeddings.ts",
     "embeddings:coverage": "tsx scripts/generate-embeddings.ts --coverage",
     "embeddings:case": "tsx scripts/generate-embeddings.ts --case-id"
