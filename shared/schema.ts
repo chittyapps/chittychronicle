@@ -349,6 +349,21 @@ export const orchestratorRoutingPolicy = pgTable("orchestrator_routing_policy", 
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Outbound Messages - Outbox pattern for reliable delivery to ecosystem targets
+export const outboundMessages = pgTable("outbound_messages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  distributionId: uuid("distribution_id").references(() => evidenceDistributions.id, { onDelete: 'cascade' }).notNull(),
+  target: ecosystemTargetEnum("target").notNull(),
+  payload: jsonb("payload").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default('pending'), // pending, dispatching, delivered, failed
+  attemptCount: varchar("attempt_count", { length: 10 }).notNull().default('0'),
+  lastAttemptAt: timestamp("last_attempt_at"),
+  deliveredAt: timestamp("delivered_at"),
+  errorLog: text("error_log"),
+  externalResponse: jsonb("external_response"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const casesRelations = relations(cases, ({ many }) => ({
   timelineEntries: many(timelineEntries),
@@ -503,6 +518,11 @@ export const insertOrchestratorRoutingPolicySchema = createInsertSchema(orchestr
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertOutboundMessageSchema = createInsertSchema(outboundMessages).omit({
+  id: true,
+  createdAt: true,
 });
 
 // Contradiction Detection Schema
@@ -776,3 +796,5 @@ export type EvidenceEnvelopeParticipant = typeof evidenceEnvelopeParticipants.$i
 export type InsertEvidenceEnvelopeParticipant = z.infer<typeof insertEvidenceEnvelopeParticipantSchema>;
 export type OrchestratorRoutingPolicy = typeof orchestratorRoutingPolicy.$inferSelect;
 export type InsertOrchestratorRoutingPolicy = z.infer<typeof insertOrchestratorRoutingPolicySchema>;
+export type OutboundMessage = typeof outboundMessages.$inferSelect;
+export type InsertOutboundMessage = z.infer<typeof insertOutboundMessageSchema>;

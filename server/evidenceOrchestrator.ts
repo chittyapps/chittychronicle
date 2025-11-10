@@ -6,12 +6,15 @@ import {
   evidenceEnvelopeParticipants,
   orchestratorRoutingPolicy,
   auditLog,
+  outboundMessages,
   type EvidenceEnvelope,
   type EvidenceDistribution,
   type InsertEvidenceEnvelope,
   type InsertEvidenceDistribution,
+  type OutboundMessage,
 } from '@shared/schema';
 import { eq, and, or, inArray, sql } from 'drizzle-orm';
+import { ChittyAdapterFactory, type ChittyDeliveryResponse } from './chittyAdapters';
 
 // Event types for orchestrator state machine
 export type OrchestratorEvent =
@@ -93,117 +96,184 @@ export class EvidenceOrchestrator {
   }
 
   /**
-   * Process pending distributions and attempt to send them to target systems
+   * Process pending distributions using outbox pattern
    */
   async processPendingDistributions(): Promise<void> {
+    // First, create outbound messages for any distributions without them
+    await this.createOutboundMessages();
+    
+    // Then process pending outbound messages
+    await this.dispatchOutboundMessages();
+  }
+
+  /**
+   * Create outbound messages for pending distributions (outbox pattern)
+   */
+  private async createOutboundMessages(): Promise<void> {
     const pendingDistributions = await db.query.evidenceDistributions.findMany({
       where: eq(evidenceDistributions.status, 'pending'),
     });
 
     for (const distribution of pendingDistributions) {
-      try {
-        await this.sendToTarget(distribution);
-        
-        // Update distribution status to dispatched
-        await db.update(evidenceDistributions)
-          .set({ 
-            status: 'dispatched',
-            dispatchedAt: new Date(),
-          })
-          .where(eq(evidenceDistributions.id, distribution.id));
+      // Check if outbound message already exists
+      const existingMessage = await db.query.outboundMessages.findFirst({
+        where: eq(outboundMessages.distributionId, distribution.id),
+      });
 
-        this.emitEvent({
-          type: 'evidence.dispatch.completed',
-          payload: { distributionId: distribution.id },
+      if (!existingMessage) {
+        // Get the envelope data
+        const envelope = await db.query.evidenceEnvelopes.findFirst({
+          where: eq(evidenceEnvelopes.id, distribution.envelopeId),
         });
+
+        if (envelope) {
+          // Create outbound message with full payload
+          await db.insert(outboundMessages).values({
+            distributionId: distribution.id,
+            target: distribution.target,
+            payload: this.buildPayload(envelope),
+            status: 'pending',
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Dispatch outbound messages using adapters
+   */
+  private async dispatchOutboundMessages(): Promise<void> {
+    const pendingMessages = await db.query.outboundMessages.findMany({
+      where: or(
+        eq(outboundMessages.status, 'pending'),
+        eq(outboundMessages.status, 'dispatching')
+      ),
+    });
+
+    for (const message of pendingMessages) {
+      // Skip if too many attempts (max 5 retries)
+      if (parseInt(message.attemptCount || '0') >= 5) {
+        await db.update(outboundMessages)
+          .set({ status: 'failed', errorLog: 'Max retry attempts exceeded' })
+          .where(eq(outboundMessages.id, message.id));
+        continue;
+      }
+
+      try {
+        // Mark as dispatching
+        await db.update(outboundMessages)
+          .set({ 
+            status: 'dispatching',
+            lastAttemptAt: new Date(),
+            attemptCount: String(parseInt(message.attemptCount || '0') + 1),
+          })
+          .where(eq(outboundMessages.id, message.id));
+
+        // Get adapter and send
+        const adapter = ChittyAdapterFactory.getAdapter(message.target);
+        const envelope = this.payloadToEnvelope(message.payload as any);
+        const response = await adapter.send(envelope);
+
+        if (response.success) {
+          // Update outbound message
+          await db.update(outboundMessages)
+            .set({ 
+              status: 'delivered',
+              deliveredAt: new Date(),
+              externalResponse: response,
+            })
+            .where(eq(outboundMessages.id, message.id));
+
+          // Update distribution
+          await db.update(evidenceDistributions)
+            .set({ 
+              status: 'dispatched',
+              dispatchedAt: new Date(),
+              acknowledgedAt: new Date(),
+              externalId: response.externalId,
+            })
+            .where(eq(evidenceDistributions.id, message.distributionId));
+
+          this.emitEvent({
+            type: 'evidence.dispatch.completed',
+            payload: { distributionId: message.distributionId },
+          });
+        } else {
+          throw new Error(response.error || 'Delivery failed');
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const currentAttempts = parseInt(message.attemptCount || '0') + 1;
         
-        // Update distribution with error
+        console.error(`[Orchestrator] Dispatch failed for message ${message.id} (attempt ${currentAttempts}/5):`, errorMessage);
+        
+        // Update outbound message with error
+        await db.update(outboundMessages)
+          .set({ 
+            status: 'pending', // Reset to pending for retry
+            errorLog: errorMessage,
+          })
+          .where(eq(outboundMessages.id, message.id));
+
+        // Update distribution with correct retry count
         await db.update(evidenceDistributions)
           .set({ 
             status: 'failed',
             errorLog: errorMessage,
-            retryCount: String(parseInt(distribution.retryCount || '0') + 1),
+            retryCount: String(currentAttempts),
           })
-          .where(eq(evidenceDistributions.id, distribution.id));
+          .where(eq(evidenceDistributions.id, message.distributionId));
 
         this.emitEvent({
           type: 'evidence.dispatch.failed',
-          payload: { distributionId: distribution.id, error: errorMessage },
+          payload: { distributionId: message.distributionId, error: errorMessage },
         });
       }
     }
   }
 
   /**
-   * Send evidence distribution to target ecosystem system
+   * Build payload from evidence envelope for outbound messages
    */
-  private async sendToTarget(distribution: EvidenceDistribution): Promise<void> {
-    // Get the envelope data
-    const envelope = await db.query.evidenceEnvelopes.findFirst({
-      where: eq(evidenceEnvelopes.id, distribution.envelopeId),
-    });
-
-    if (!envelope) {
-      throw new Error(`Envelope ${distribution.envelopeId} not found`);
-    }
-
-    // Simulate sending to different target systems
-    // In production, this would integrate with actual ChittyLedger, ChittyVerify, etc.
-    switch (distribution.target) {
-      case 'chitty_ledger':
-        await this.sendToChittyLedger(envelope);
-        break;
-      case 'chitty_verify':
-        await this.sendToChittyVerify(envelope);
-        break;
-      case 'chitty_trust':
-        await this.sendToChittyTrust(envelope);
-        break;
-      case 'chitty_chain':
-        await this.sendToChittyChain(envelope);
-        break;
-      default:
-        throw new Error(`Unknown target: ${distribution.target}`);
-    }
+  private buildPayload(envelope: EvidenceEnvelope): any {
+    return {
+      envelopeId: envelope.id,
+      caseId: envelope.caseId,
+      timelineEntryId: envelope.timelineEntryId,
+      ownerId: envelope.ownerId,
+      title: envelope.title,
+      description: envelope.description,
+      contentHash: envelope.contentHash,
+      sourceMetadata: envelope.sourceMetadata,
+      chittyIds: envelope.chittyIds,
+      version: envelope.version,
+      status: envelope.status,
+      visibilityScope: envelope.visibilityScope,
+      createdAt: envelope.createdAt,
+      createdBy: envelope.createdBy,
+    };
   }
 
   /**
-   * Send evidence to ChittyLedger for immutable record keeping
+   * Convert payload back to envelope structure for adapter usage
    */
-  private async sendToChittyLedger(envelope: EvidenceEnvelope): Promise<void> {
-    // TODO: Integrate with actual ChittyLedger API
-    console.log(`Sending envelope ${envelope.id} to ChittyLedger`);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  /**
-   * Send evidence to ChittyVerify for verification workflows
-   */
-  private async sendToChittyVerify(envelope: EvidenceEnvelope): Promise<void> {
-    // TODO: Integrate with actual ChittyVerify API
-    console.log(`Sending envelope ${envelope.id} to ChittyVerify`);
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  /**
-   * Send evidence to ChittyTrust for trust scoring
-   */
-  private async sendToChittyTrust(envelope: EvidenceEnvelope): Promise<void> {
-    // TODO: Integrate with actual ChittyTrust API
-    console.log(`Sending envelope ${envelope.id} to ChittyTrust`);
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  /**
-   * Send evidence to ChittyChain for blockchain notarization
-   */
-  private async sendToChittyChain(envelope: EvidenceEnvelope): Promise<void> {
-    // TODO: Integrate with actual ChittyChain API
-    console.log(`Sending envelope ${envelope.id} to ChittyChain`);
-    await new Promise(resolve => setTimeout(resolve, 100));
+  private payloadToEnvelope(payload: any): EvidenceEnvelope {
+    return {
+      id: payload.envelopeId,
+      caseId: payload.caseId,
+      timelineEntryId: payload.timelineEntryId,
+      ownerId: payload.ownerId,
+      title: payload.title,
+      description: payload.description,
+      contentHash: payload.contentHash,
+      sourceMetadata: payload.sourceMetadata,
+      chittyIds: payload.chittyIds,
+      version: payload.version,
+      status: payload.status,
+      visibilityScope: payload.visibilityScope,
+      createdAt: payload.createdAt,
+      createdBy: payload.createdBy,
+    } as EvidenceEnvelope;
   }
 
   /**
