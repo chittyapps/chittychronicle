@@ -12,10 +12,22 @@ import { db } from "./db";
 import { timelineEntries, timelineSources } from "@shared/schema";
 import { eq, isNull, sql } from "drizzle-orm";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client only if API key is available
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  : null;
+
+// Helper to check if embedding service is available
+function ensureEmbeddingServiceAvailable(): void {
+  if (!openai) {
+    throw new Error(
+      "Embedding service unavailable: OPENAI_API_KEY not configured. " +
+      "Please set the OPENAI_API_KEY environment variable to enable semantic search features."
+    );
+  }
+}
 
 // Configuration
 const EMBEDDING_CONFIG = {
@@ -47,6 +59,7 @@ export async function generateEmbedding(
   text: string,
   model: string = EMBEDDING_CONFIG.model
 ): Promise<EmbeddingResult> {
+  ensureEmbeddingServiceAvailable();
 
   if (!text || text.trim().length === 0) {
     throw new Error("Text cannot be empty for embedding generation");

@@ -13,6 +13,7 @@ import Communications from "@/pages/communications";
 import Automation from "@/pages/automation";
 import Dashboard from "@/pages/dashboard";
 import ChittyEcosystem from "@/pages/chitty-ecosystem";
+import EvidenceOrchestrator from "@/pages/evidence-orchestrator";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/communications/:caseId" component={Communications} />
       <Route path="/automation/:caseId" component={Automation} />
       <Route path="/ecosystem" component={ChittyEcosystem} />
+      <Route path="/evidence/orchestrator" component={EvidenceOrchestrator} />
       <Route component={NotFound} />
     </Switch>
   );

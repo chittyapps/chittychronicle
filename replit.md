@@ -12,16 +12,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**Evidence Orchestrator with Multi-User Collaboration (November 10, 2025)**
+**Evidence Orchestrator with Production-Ready Ecosystem Integration (November 10, 2025)**
 - ✅ Created comprehensive multi-user collaboration schema with role-based access control
 - ✅ Implemented evidence envelope system for tracking evidence lifecycle and version lineage
-- ✅ Built evidence orchestrator service (`server/evidenceOrchestrator.ts`) with event-driven architecture
-- ✅ Added fine-grained permission system with visibility overrides and participant permissions
-- ✅ Created orchestrator routing policy system for mapping evidence to ecosystem targets
+- ✅ Built production-ready evidence orchestrator service with outbox pattern for reliable delivery
+- ✅ Created HTTP adapter system (`server/chittyAdapters.ts`) with real endpoints for ChittyLedger, ChittyVerify, ChittyTrust, ChittyChain
+- ✅ Added outbound_messages table with retry logic, error tracking, and external response storage
+- ✅ Implemented 30-second HTTP timeouts and structured logging for all adapter calls
+- ✅ Created storage layer methods: getAllEvidenceDistributions, getOutboundMessages with filtering
+- ✅ Added API routes: /api/evidence/distributions, /api/evidence/outbound-messages with query parameter support
+- ✅ Built Evidence Orchestrator Dashboard UI at /evidence/orchestrator with real-time polling
+- ✅ Implemented filtering (case, status, target), search, batch operations, and statistics dashboard
+- ✅ Added orchestrator routing policy system for mapping evidence to ecosystem targets
 - ✅ Implemented effective permission resolver for client/attorney/shared workspace views
-- ✅ Added database tables: evidence_envelopes, evidence_distributions, evidence_visibility_overrides, evidence_envelope_participants, orchestrator_routing_policy
-- ✅ Encoded all constraints in Drizzle schema with proper uniqueIndex and enum array validation
-- ✅ Added audit logging for evidence orchestration events
+- ✅ Database tables: evidence_envelopes, evidence_distributions, outbound_messages, evidence_visibility_overrides, evidence_envelope_participants, orchestrator_routing_policy
+- 📋 Future UX enhancements: persistent sidebar, live polling indicator, enhanced detail panels
 
 **ChittyID Authentication Integration (August 19, 2025)**
 - ✓ Created ChittyAuth service in `server/chittyAuth.ts` with full OIDC integration
