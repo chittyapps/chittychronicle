@@ -1,0 +1,201 @@
+# ARIBIA Chronicle - Cloudflare Deployment Configuration
+# Case: Arias v Bianchi 2024D007847
+# ChittyCFD v1.0 Remote Deployment
+
+name = "aribia-chronicle"
+main = "dist/index.js"
+compatibility_date = "2024-10-01"
+node_compat = true
+
+# Account and zone configuration
+account_id = "your-cloudflare-account-id"
+zone_id = "your-cloudflare-zone-id"
+
+# ============================================================================
+# PRODUCTION ENVIRONMENT
+# ============================================================================
+[env.production]
+name = "aribia-chronicle"
+route = { pattern = "aribia-chronicle.chitty.cc/*", zone_name = "chitty.cc" }
+
+[env.production.vars]
+NODE_ENV = "production"
+SERVICE_NAME = "aribia-chronicle"
+CASE_NUMBER = "2024D007847"
+CASE_NAME = "Arias v Bianchi"
+
+# D1 Database - Primary PostgreSQL-compatible database
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "aribia-chronicle-prod"
+database_id = "your-d1-database-id"
+
+# R2 Storage - Evidence file storage
+[[env.production.r2_buckets]]
+binding = "EVIDENCE_STORAGE"
+bucket_name = "aribia-evidence-prod"
+preview_bucket_name = "aribia-evidence-preview"
+
+# R2 Storage - Generated documents
+[[env.production.r2_buckets]]
+binding = "DOCUMENT_STORAGE"
+bucket_name = "aribia-documents-prod"
+
+# KV Storage - Agent state and cache
+[[env.production.kv_namespaces]]
+binding = "AGENT_STATE"
+id = "your-kv-namespace-id-1"
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "your-kv-namespace-id-2"
+
+# Durable Objects - Real-time agent coordination
+[[env.production.durable_objects.bindings]]
+name = "EVIDENCE_PROCESSOR"
+class_name = "EvidenceProcessor"
+script_name = "aribia-chronicle"
+
+[[env.production.durable_objects.bindings]]
+name = "ANALYSIS_ENGINE"
+class_name = "AnalysisEngine"
+script_name = "aribia-chronicle"
+
+[[env.production.durable_objects.bindings]]
+name = "LITIGATION_MANAGER"
+class_name = "LitigationManager"
+script_name = "aribia-chronicle"
+
+# Secrets (set via: wrangler secret put SECRET_NAME)
+# - ANTHROPIC_API_KEY
+# - CHITTYID_SERVICE_TOKEN
+# - CHITTYCHAIN_API_KEY
+# - SESSION_SECRET
+# - DATABASE_URL (if using external Neon instead of D1)
+
+# ============================================================================
+# STAGING ENVIRONMENT
+# ============================================================================
+[env.staging]
+name = "aribia-chronicle-staging"
+route = { pattern = "staging.aribia-chronicle.chitty.cc/*", zone_name = "chitty.cc" }
+
+[env.staging.vars]
+NODE_ENV = "staging"
+SERVICE_NAME = "aribia-chronicle-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "aribia-chronicle-staging"
+database_id = "your-d1-staging-database-id"
+
+[[env.staging.r2_buckets]]
+binding = "EVIDENCE_STORAGE"
+bucket_name = "aribia-evidence-staging"
+
+[[env.staging.r2_buckets]]
+binding = "DOCUMENT_STORAGE"
+bucket_name = "aribia-documents-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "AGENT_STATE"
+id = "your-kv-staging-namespace-id-1"
+
+[[env.staging.kv_namespaces]]
+binding = "CACHE"
+id = "your-kv-staging-namespace-id-2"
+
+# ============================================================================
+# DEVELOPMENT ENVIRONMENT
+# ============================================================================
+[env.development]
+name = "aribia-chronicle-dev"
+
+[env.development.vars]
+NODE_ENV = "development"
+SERVICE_NAME = "aribia-chronicle-dev"
+
+# ============================================================================
+# BUILD CONFIGURATION
+# ============================================================================
+[build]
+command = "npm run build"
+cwd = "."
+watch_dirs = ["server", "client", "custom"]
+
+[build.upload]
+format = "service-worker"
+
+# ============================================================================
+# OBSERVABILITY
+# ============================================================================
+[observability]
+enabled = true
+
+# Logs
+[observability.logs]
+enabled = true
+
+# ============================================================================
+# AI BINDING (for Cloudflare AI Workers)
+# ============================================================================
+[ai]
+binding = "AI"
+
+# ============================================================================
+# LIMITS AND PERFORMANCE
+# ============================================================================
+[limits]
+cpu_ms = 50000  # Extended CPU time for AI processing
+
+[placement]
+mode = "smart"  # Smart placement for optimal performance
+
+# ============================================================================
+# CRON TRIGGERS FOR AUTONOMOUS AGENTS
+# ============================================================================
+
+# Evidence Processing Agent - Every 5 minutes
+[[env.production.triggers.crons]]
+cron = "*/5 * * * *"
+handler = "custom/agents/evidence-agent.ts"
+
+# Analysis Agent - Every 15 minutes
+[[env.production.triggers.crons]]
+cron = "*/15 * * * *"
+handler = "custom/agents/analysis-agent.ts"
+
+# Litigation Agent - Every hour
+[[env.production.triggers.crons]]
+cron = "0 * * * *"
+handler = "custom/agents/litigation-agent.ts"
+
+# Timeline Synthesis - Every 10 minutes
+[[env.production.triggers.crons]]
+cron = "*/10 * * * *"
+handler = "custom/agents/timeline-synthesizer.ts"
+
+# Strategy Advisor - Every 30 minutes
+[[env.production.triggers.crons]]
+cron = "*/30 * * * *"
+handler = "custom/agents/strategy-advisor.ts"
+
+# ============================================================================
+# COMPATIBILITY FLAGS
+# ============================================================================
+compatibility_flags = [
+  "nodejs_compat",
+  "streams_enable_constructors"
+]
+
+# ============================================================================
+# TAIL CONSUMERS (for log aggregation)
+# ============================================================================
+[[env.production.tail_consumers]]
+service = "aribia-chronicle-logs"
+
+# ============================================================================
+# WRANGLER CONFIGURATION
+# ============================================================================
+[wrangler]
+send_metrics = true

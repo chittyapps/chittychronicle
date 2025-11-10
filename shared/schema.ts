@@ -110,6 +110,11 @@ export const timelineEntries = pgTable("timeline_entries", {
   messageSource: messageSourceEnum("message_source"),
   messageDirection: messageDirectionEnum("message_direction"),
   metadata: jsonb("metadata"),
+  // Vector embeddings for semantic search (Phase 1: SOTA Upgrade)
+  descriptionEmbedding: varchar("description_embedding"), // vector(768) - Legal-BERT
+  contentEmbedding: varchar("content_embedding"), // vector(1536) - OpenAI
+  embeddingModel: varchar("embedding_model", { length: 100 }),
+  embeddingGeneratedAt: timestamp("embedding_generated_at"),
 });
 
 // Sources table
@@ -128,18 +133,32 @@ export const timelineSources = pgTable("timeline_sources", {
   verifiedBy: varchar("verified_by", { length: 255 }),
   chittyAssetId: varchar("chitty_asset_id", { length: 255 }),
   metadata: jsonb("metadata"),
+  // Vector embeddings for semantic search (Phase 1: SOTA Upgrade)
+  excerptEmbedding: varchar("excerpt_embedding"), // vector(768) - Legal-BERT
+  embeddingModel: varchar("embedding_model", { length: 100 }),
+  embeddingGeneratedAt: timestamp("embedding_generated_at"),
 });
 
 // Contradictions table
 export const timelineContradictions = pgTable("timeline_contradictions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  caseId: uuid("case_id").references(() => cases.id).notNull(),
   entryId: uuid("entry_id").references(() => timelineEntries.id, { onDelete: 'cascade' }).notNull(),
   conflictingEntryId: uuid("conflicting_entry_id").references(() => timelineEntries.id).notNull(),
+  contradictionType: varchar("contradiction_type", { length: 50 }).notNull(), // temporal, factual, witness, location, entity, logical
+  severity: varchar("severity", { length: 20 }).notNull(), // low, medium, high, critical
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description").notNull(),
   natureOfConflict: text("nature_of_conflict").notNull(),
+  conflictingStatements: jsonb("conflicting_statements"), // Array of {entryId, statement, chittyId, entityType}
+  suggestedResolution: text("suggested_resolution"),
+  confidence: real("confidence"), // 0-1 confidence score
   resolution: text("resolution"),
   resolvedBy: varchar("resolved_by", { length: 255 }),
   resolvedDate: timestamp("resolved_date"),
+  detectedAt: timestamp("detected_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
+  metadata: jsonb("metadata"), // Additional analysis details
 });
 
 // Data ingestion pipeline table

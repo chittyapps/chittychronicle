@@ -118,9 +118,20 @@ export class ChittyAuthService {
     // Configure ChittyID strategy
     const verifyFunction: VerifyFunction = async (tokens, claims, done) => {
       try {
+        // Extract ChittyID - must come from ChittyID service, never generate locally
+        if (!claims.sub) {
+          done(new Error('ChittyID (sub claim) required from ChittyID service'));
+          return;
+        }
+
+        // Validate ChittyID format (should be from id.chitty.cc, not generated locally)
+        if (!claims.sub.startsWith('CID-')) {
+          console.warn(`Invalid ChittyID format: ${claims.sub}. ChittyIDs must come from id.chitty.cc`);
+        }
+
         // Extract ChittyID user information
         const chittyUser: ChittyIDUser = {
-          chittyId: claims.sub || `CID-${randomBytes(4).toString('hex').toUpperCase()}`,
+          chittyId: claims.sub,
           email: claims.email as string,
           name: claims.name as string || claims.preferred_username as string || 'Unknown User',
           roles: (claims.roles as string[]) || ['user'],
@@ -419,12 +430,50 @@ export class ChittyAuthService {
   }
 
   /**
-   * Generate ChittyID for new users
+   * Mint ChittyID via ChittyID service
+   *
+   * IMPORTANT: ChittyIDs must NEVER be generated locally. All ChittyIDs must come from
+   * the authoritative ChittyID service at id.chitty.cc
+   *
+   * @param entityType Type of entity requiring ChittyID
+   * @param metadata Additional metadata for ChittyID minting
    */
-  generateChittyId(): string {
-    const timestamp = Date.now().toString(36);
-    const random = randomBytes(4).toString('hex');
-    return `CID-${timestamp}${random}`.toUpperCase().substring(0, 12);
+  async mintChittyId(entityType: string, metadata: any = {}): Promise<string> {
+    const chittyIdServiceUrl = process.env.CHITTYID_BASE_URL || 'https://id.chitty.cc';
+    const serviceToken = process.env.CHITTYID_SERVICE_TOKEN;
+
+    if (!serviceToken) {
+      throw new Error(
+        'CHITTYID_SERVICE_TOKEN required to mint ChittyIDs. ' +
+        'ChittyIDs must never be generated locally - they must come from id.chitty.cc'
+      );
+    }
+
+    try {
+      const response = await fetch(`${chittyIdServiceUrl}/api/mint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceToken}`,
+        },
+        body: JSON.stringify({
+          entityType,
+          metadata,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`ChittyID minting failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result.chittyId;
+    } catch (error) {
+      console.error('Failed to mint ChittyID from id.chitty.cc:', error);
+      throw new Error(
+        'ChittyID minting unavailable. Service must be accessible at id.chitty.cc'
+      );
+    }
   }
 
   /**

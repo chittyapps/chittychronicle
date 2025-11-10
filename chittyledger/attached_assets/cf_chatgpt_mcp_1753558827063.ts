@@ -359,7 +359,7 @@ class CloudflareChatGPTMCP {
   private async handleCreateSession(args: any) {
     const { user_id, session_name, initial_system_prompt } = args;
     
-    const sessionId = crypto.randomUUID();
+    const sessionId = await mintChittyID("APP", "ENTITY");
     const now = new Date().toISOString();
 
     const session: ChittyChatSession = {
@@ -375,7 +375,7 @@ class CloudflareChatGPTMCP {
     // Add initial system prompt if provided
     if (initial_system_prompt) {
       session.messages.push({
-        id: crypto.randomUUID(),
+        id: await mintChittyID("APP", "ENTITY"),
         session_id: sessionId,
         role: 'system',
         content: initial_system_prompt,
@@ -429,7 +429,7 @@ class CloudflareChatGPTMCP {
     const { session_id, role, content, tokens_used, cost } = args;
     
     const message: ChittyMessage = {
-      id: crypto.randomUUID(),
+      id: await mintChittyID("APP", "ENTITY"),
       session_id,
       role,
       content,
@@ -489,7 +489,7 @@ class CloudflareChatGPTMCP {
   private async storeInteraction(sessionId: string, userMessage: OpenAIMessage, assistantMessage: any, usage: any) {
     // Store both user and assistant messages
     await this.storeMessage({
-      id: crypto.randomUUID(),
+      id: await mintChittyID("APP", "ENTITY"),
       session_id: sessionId,
       role: userMessage.role,
       content: userMessage.content,
@@ -497,7 +497,7 @@ class CloudflareChatGPTMCP {
     });
 
     await this.storeMessage({
-      id: crypto.randomUUID(),
+      id: await mintChittyID("APP", "ENTITY"),
       session_id: sessionId,
       role: 'assistant',
       content: assistantMessage.content,

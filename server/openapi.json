@@ -1,0 +1,880 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ChittyChronicle API",
+    "version": "1.0.0",
+    "description": "Legal timeline management system with AI-powered contradiction detection, evidence tracking, and ChittyOS ecosystem integration.",
+    "contact": {
+      "name": "ChittyOS Support",
+      "url": "https://chitty.cc"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://chronicle.chitty.cc",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "ChittyID and session management"
+    },
+    {
+      "name": "Cases",
+      "description": "Legal case management"
+    },
+    {
+      "name": "Timeline",
+      "description": "Timeline entry management"
+    },
+    {
+      "name": "Analysis",
+      "description": "AI-powered contradiction detection and deadline tracking"
+    },
+    {
+      "name": "Communications",
+      "description": "Cross-source message aggregation and timeline generation"
+    },
+    {
+      "name": "Discovery",
+      "description": "Service discovery and health"
+    }
+  ],
+  "paths": {
+    "/.well-known/chronicle-manifest.json": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "Get service manifest",
+        "description": "ChittyOS service discovery manifest",
+        "responses": {
+          "200": {
+            "description": "Service manifest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceManifest"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/mcp-manifest.json": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "Get MCP manifest",
+        "description": "Model Context Protocol integration manifest",
+        "responses": {
+          "200": {
+            "description": "MCP manifest"
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "Get OpenAPI specification",
+        "description": "This specification document",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3.1 specification"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get current user",
+        "description": "Returns the authenticated user's profile with ChittyID information",
+        "security": [{"cookieAuth": []}],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/cases": {
+      "get": {
+        "tags": ["Cases"],
+        "summary": "List cases",
+        "description": "Get all cases for the authenticated user",
+        "security": [{"cookieAuth": []}],
+        "responses": {
+          "200": {
+            "description": "List of cases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Case"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Cases"],
+        "summary": "Create case",
+        "description": "Create a new legal case",
+        "security": [{"cookieAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Case created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Case"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{caseId}": {
+      "get": {
+        "tags": ["Cases"],
+        "summary": "Get case",
+        "security": [{"cookieAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/caseId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Case details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Case"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Cases"],
+        "summary": "Update case",
+        "security": [{"cookieAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/caseId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Case updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Case"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{caseId}/analyze-contradictions": {
+      "post": {
+        "tags": ["Analysis"],
+        "summary": "Analyze timeline for contradictions",
+        "description": "Run AI-powered contradiction detection on all timeline entries for this case. Results are persisted to database.",
+        "security": [{"cookieAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/caseId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contradiction analysis completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContradictionAnalysis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{caseId}/contradictions": {
+      "get": {
+        "tags": ["Analysis"],
+        "summary": "Get contradiction reports",
+        "description": "Retrieve all contradiction reports for this case from database",
+        "security": [{"cookieAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/caseId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of contradiction reports",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContradictionReport"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/timeline/entries": {
+      "get": {
+        "tags": ["Timeline"],
+        "summary": "List timeline entries",
+        "description": "Get timeline entries with optional filtering",
+        "security": [{"cookieAuth": []}],
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "entryType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["task", "event"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Timeline entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TimelineEntry"
+                      }
+                    },
+                    "totalCount": {
+                      "type": "integer"
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Timeline"],
+        "summary": "Create timeline entry",
+        "security": [{"cookieAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTimelineEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Timeline entry created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineEntry"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/timeline/search": {
+      "get": {
+        "tags": ["Timeline"],
+        "summary": "Search timeline entries",
+        "description": "Full-text search across timeline entries",
+        "security": [{"cookieAuth": []}],
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimelineEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "connect.sid",
+        "description": "Session cookie from ChittyID or Replit Auth"
+      }
+    },
+    "parameters": {
+      "caseId": {
+        "name": "caseId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "Case UUID"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Authentication required"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ServiceManifest": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "example": "chittychronicle"
+          },
+          "version": {
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "description": {
+            "type": "string"
+          },
+          "endpoints": {
+            "type": "object"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "ChittyID or user ID"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "firstName": {
+                "type": "string"
+              },
+              "lastName": {
+                "type": "string"
+              }
+            }
+          },
+          "profile": {
+            "type": "object",
+            "description": "ChittyID profile with attestations"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Case": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caseName": {
+            "type": "string"
+          },
+          "caseNumber": {
+            "type": "string"
+          },
+          "jurisdiction": {
+            "type": "string"
+          },
+          "filingDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "trialDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "discoveryDeadline": {
+            "type": "string",
+            "format": "date"
+          },
+          "chittyPmProjectId": {
+            "type": "string",
+            "description": "ChittyPM project ID if integrated"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          }
+        },
+        "required": ["caseName", "caseNumber", "createdBy"]
+      },
+      "CreateCaseRequest": {
+        "type": "object",
+        "properties": {
+          "caseName": {
+            "type": "string"
+          },
+          "caseNumber": {
+            "type": "string"
+          },
+          "jurisdiction": {
+            "type": "string"
+          },
+          "filingDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "trialDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "discoveryDeadline": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": ["caseName", "caseNumber"]
+      },
+      "UpdateCaseRequest": {
+        "type": "object",
+        "properties": {
+          "caseName": {
+            "type": "string"
+          },
+          "jurisdiction": {
+            "type": "string"
+          },
+          "trialDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "discoveryDeadline": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "TimelineEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "chittyId": {
+            "type": "string",
+            "description": "ChittyID for external system integration"
+          },
+          "caseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entryType": {
+            "type": "string",
+            "enum": ["task", "event"]
+          },
+          "eventSubtype": {
+            "type": "string",
+            "enum": ["deadline", "filed", "signed", "executed", "served", "hearing", "occurred", "expired"]
+          },
+          "taskSubtype": {
+            "type": "string",
+            "enum": ["draft", "file", "serve", "review", "respond"]
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "description": {
+            "type": "string"
+          },
+          "detailedNotes": {
+            "type": "string"
+          },
+          "confidenceLevel": {
+            "type": "string",
+            "enum": ["high", "medium", "low", "unverified"]
+          },
+          "eventStatus": {
+            "type": "string",
+            "enum": ["occurred", "upcoming", "missed"]
+          },
+          "taskStatus": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "blocked"]
+          },
+          "assignedTo": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "relatedEntries": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Source message ID if generated from communications"
+          },
+          "messageSource": {
+            "type": "string",
+            "enum": ["imessage", "whatsapp", "email", "docusign", "openphone"]
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["caseId", "entryType", "date", "description", "confidenceLevel", "createdBy", "modifiedBy"]
+      },
+      "CreateTimelineEntryRequest": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entryType": {
+            "type": "string",
+            "enum": ["task", "event"]
+          },
+          "eventSubtype": {
+            "type": "string"
+          },
+          "taskSubtype": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "description": {
+            "type": "string"
+          },
+          "detailedNotes": {
+            "type": "string"
+          },
+          "confidenceLevel": {
+            "type": "string",
+            "enum": ["high", "medium", "low", "unverified"]
+          },
+          "assignedTo": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["caseId", "entryType", "date", "description", "confidenceLevel"]
+      },
+      "ContradictionAnalysis": {
+        "type": "object",
+        "properties": {
+          "contradictions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContradictionReport"
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalContradictions": {
+                "type": "integer"
+              },
+              "criticalCount": {
+                "type": "integer"
+              },
+              "highCount": {
+                "type": "integer"
+              },
+              "mediumCount": {
+                "type": "integer"
+              },
+              "lowCount": {
+                "type": "integer"
+              },
+              "analysisTimestamp": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ContradictionReport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "caseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "timelineEntryIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "contradictionType": {
+            "type": "string",
+            "enum": ["temporal", "factual", "witness", "location", "entity", "logical"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "conflictingStatements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "entryId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "statement": {
+                  "type": "string"
+                },
+                "chittyId": {
+                  "type": "string"
+                },
+                "entityType": {
+                  "type": "string",
+                  "enum": ["person", "place", "thing", "event"]
+                }
+              }
+            }
+          },
+          "suggestedResolution": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "AI confidence score 0-1"
+          },
+          "detectedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedBy": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "analysisDetails": {
+                "type": "string"
+              },
+              "chittyIdConflicts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "entityId": {
+                      "type": "string"
+                    },
+                    "conflictReason": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

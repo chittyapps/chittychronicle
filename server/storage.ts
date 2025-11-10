@@ -18,6 +18,7 @@ import {
   evidenceEnvelopes,
   evidenceDistributions,
   evidenceEnvelopeParticipants,
+  outboundMessages,
   type User,
   type UpsertUser,
   type Case,
@@ -55,6 +56,7 @@ import {
   type EvidenceDistribution,
   type EvidenceEnvelopeParticipant,
   type InsertEvidenceEnvelopeParticipant,
+  type OutboundMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, or, like, isNull } from "drizzle-orm";
@@ -102,7 +104,10 @@ export interface IStorage {
   // Contradiction operations
   getTimelineContradictions(entryId: string): Promise<TimelineContradiction[]>;
   createTimelineContradiction(contradictionData: InsertTimelineContradiction): Promise<TimelineContradiction>;
-  
+  getContradictionById(id: string): Promise<TimelineContradiction | undefined>;
+  updateContradiction(id: string, updates: Partial<InsertTimelineContradiction>): Promise<TimelineContradiction | undefined>;
+  resolveContradiction(id: string, resolvedBy: string, resolution: string): Promise<void>;
+
   // Search and analysis
   searchTimelineEntries(caseId: string, query: string): Promise<TimelineEntry[]>;
   getAllTimelineEntries(): Promise<TimelineEntry[]>;
@@ -178,6 +183,17 @@ export interface IStorage {
   getEvidenceEnvelope(id: string): Promise<EvidenceEnvelope | undefined>;
   getEvidenceEnvelopes(caseId: string): Promise<EvidenceEnvelope[]>;
   getEvidenceDistributions(envelopeId: string): Promise<EvidenceDistribution[]>;
+  getAllEvidenceDistributions(caseId?: string, filters?: {
+    status?: string;
+    target?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<EvidenceDistribution[]>;
+  getOutboundMessages(distributionId?: string, filters?: {
+    status?: string;
+    target?: string;
+    limit?: number;
+  }): Promise<OutboundMessage[]>;
   addEvidenceParticipant(participantData: InsertEvidenceEnvelopeParticipant): Promise<EvidenceEnvelopeParticipant>;
 }
 
@@ -402,6 +418,41 @@ export class DatabaseStorage implements IStorage {
       .values(contradictionData)
       .returning();
     return contradiction;
+  }
+
+  async getContradictionById(id: string): Promise<TimelineContradiction | undefined> {
+    const [contradiction] = await db
+      .select()
+      .from(timelineContradictions)
+      .where(eq(timelineContradictions.id, id));
+    return contradiction;
+  }
+
+  async updateContradiction(
+    id: string,
+    updates: Partial<InsertTimelineContradiction>
+  ): Promise<TimelineContradiction | undefined> {
+    const [updated] = await db
+      .update(timelineContradictions)
+      .set(updates)
+      .where(eq(timelineContradictions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async resolveContradiction(
+    id: string,
+    resolvedBy: string,
+    resolution: string
+  ): Promise<void> {
+    await db
+      .update(timelineContradictions)
+      .set({
+        resolution,
+        resolvedBy,
+        resolvedDate: new Date(),
+      })
+      .where(eq(timelineContradictions.id, id));
   }
 
   // Search and analysis
@@ -963,6 +1014,88 @@ export class DatabaseStorage implements IStorage {
       .values(participantData)
       .returning();
     return participant;
+  }
+
+  async getAllEvidenceDistributions(caseId?: string, filters?: {
+    status?: string;
+    target?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<EvidenceDistribution[]> {
+    let query = db.select().from(evidenceDistributions);
+
+    const conditions = [];
+    
+    if (caseId) {
+      const envelopesForCase = await db
+        .select({ id: evidenceEnvelopes.id })
+        .from(evidenceEnvelopes)
+        .where(eq(evidenceEnvelopes.caseId, caseId));
+      const envelopeIds = envelopesForCase.map(e => e.id);
+      if (envelopeIds.length > 0) {
+        conditions.push(inArray(evidenceDistributions.envelopeId, envelopeIds));
+      } else {
+        return [];
+      }
+    }
+
+    if (filters?.status) {
+      conditions.push(eq(evidenceDistributions.status, filters.status));
+    }
+
+    if (filters?.target) {
+      conditions.push(eq(evidenceDistributions.target, filters.target as any));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    query = query.orderBy(desc(evidenceDistributions.createdAt)) as any;
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit) as any;
+    }
+
+    if (filters?.offset) {
+      query = query.offset(filters.offset) as any;
+    }
+
+    return await query;
+  }
+
+  async getOutboundMessages(distributionId?: string, filters?: {
+    status?: string;
+    target?: string;
+    limit?: number;
+  }): Promise<OutboundMessage[]> {
+    let query = db.select().from(outboundMessages);
+
+    const conditions = [];
+
+    if (distributionId) {
+      conditions.push(eq(outboundMessages.distributionId, distributionId));
+    }
+
+    if (filters?.status) {
+      conditions.push(eq(outboundMessages.status, filters.status));
+    }
+
+    if (filters?.target) {
+      conditions.push(eq(outboundMessages.target, filters.target as any));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    query = query.orderBy(desc(outboundMessages.createdAt)) as any;
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit) as any;
+    }
+
+    return await query;
   }
 }
 

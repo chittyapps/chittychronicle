@@ -79,7 +79,7 @@ export class CaseManagementService {
     // Add party IDs if not present
     const partiesWithIds = caseData.parties?.map(party => ({
       ...party,
-      id: party.id || `party-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      id: party.id || `party-${Date.now()}`
     }));
     
     const enhancedData = {
@@ -200,7 +200,7 @@ export class CaseManagementService {
     // Add IDs to new parties
     const partiesWithIds = parties.map(party => ({
       ...party,
-      id: party.id || `party-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      id: party.id || `party-${Date.now()}`
     }));
     
     const updated = await storage.updateCase(caseId, {

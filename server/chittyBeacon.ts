@@ -62,7 +62,7 @@ export class ChittyBeaconService extends EventEmitter {
   async createAlert(alert: Omit<BeaconAlert, 'id' | 'timestamp'>): Promise<BeaconAlert> {
     const fullAlert: BeaconAlert = {
       ...alert,
-      id: `ALERT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `ALERT-${Date.now()}`,
       timestamp: new Date(),
     };
 
@@ -81,7 +81,7 @@ export class ChittyBeaconService extends EventEmitter {
    * Subscribe to alerts
    */
   async subscribe(subscription: BeaconSubscription): Promise<string> {
-    const subId = `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const subId = `SUB-${Date.now()}`;
     
     if (!this.subscriptions.has(subscription.userId)) {
       this.subscriptions.set(subscription.userId, []);

@@ -1,9 +1,14 @@
 /**
  * Authentication Gateway - Legal Identity Verification System
  * Integrates with the attached comprehensive authentication system
+ *
+ * UPDATED: ChittyID Phase 2 Integration
+ * - Uses mintId() for registration numbers and session IDs
+ * - Zero Math.random() usage for identity generation
  */
 
-import { User, UserType } from '../../../../shared/types';
+import { User, UserType } from "../../../../shared/types";
+import { mintId } from "../mint-id";
 
 export interface RegistrationData {
   fullName: string;
@@ -36,7 +41,7 @@ export interface AuthenticationResult {
 export class AuthenticationGateway {
   private registeredUsers = new Map<string, any>();
   private activeSessions = new Map<string, any>();
-  private JWT_SECRET = 'chittychain-evidence-ledger-secret';
+  private JWT_SECRET = "chittychain-evidence-ledger-secret";
 
   constructor() {
     // Initialize with some demo users for development
@@ -45,26 +50,28 @@ export class AuthenticationGateway {
 
   private initializeDemoUsers() {
     const demoUser = {
-      regNumber: 'REG00000001',
-      fullName: 'John Doe',
-      email: 'john.doe@example.com',
+      regNumber: "REG00000001",
+      fullName: "John Doe",
+      email: "john.doe@example.com",
       role: UserType.ATTORNEY_PETITIONER,
-      barNumber: 'IL12345',
-      authorizedCases: ['case-1'],
+      barNumber: "IL12345",
+      authorizedCases: ["case-1"],
       registeredAt: new Date().toISOString(),
       trustScore: 85,
-      status: 'ACTIVE',
+      status: "ACTIVE",
       securityLevel: 2,
-      passwordHash: 'hashed_password_demo' // In real app, this would be properly hashed
+      passwordHash: "hashed_password_demo", // In real app, this would be properly hashed
     };
 
     this.registeredUsers.set(demoUser.regNumber, demoUser);
   }
 
-  async registerUser(registrationData: RegistrationData): Promise<AuthenticationResult> {
+  async registerUser(
+    registrationData: RegistrationData,
+  ): Promise<AuthenticationResult> {
     try {
-      // Generate registration number
-      const regNumber = this.generateRegistrationNumber();
+      // Generate proper ChittyID for registration number
+      const regNumber = await this.generateRegistrationNumber();
 
       // In a real implementation, this would verify credentials
       const userProfile = {
@@ -76,9 +83,9 @@ export class AuthenticationGateway {
         authorizedCases: registrationData.caseNumbers || [],
         registeredAt: new Date().toISOString(),
         trustScore: 100,
-        status: 'ACTIVE',
+        status: "ACTIVE",
         securityLevel: this.determineSecurityLevel(registrationData.role),
-        passwordHash: `hashed_${registrationData.password}` // Simplified for demo
+        passwordHash: `hashed_${registrationData.password}`, // Simplified for demo
       };
 
       this.registeredUsers.set(regNumber, userProfile);
@@ -94,19 +101,21 @@ export class AuthenticationGateway {
           fullName: userProfile.fullName,
           role: userProfile.role,
           authorizedCases: userProfile.authorizedCases,
-          securityLevel: userProfile.securityLevel
-        }
+          securityLevel: userProfile.securityLevel,
+        },
       };
     } catch (error) {
       return {
         success: false,
-        error: 'Registration failed',
-        details: error.message
+        error: "Registration failed",
+        details: error.message,
       };
     }
   }
 
-  async authenticateUser(credentials: AuthenticationCredentials): Promise<AuthenticationResult> {
+  async authenticateUser(
+    credentials: AuthenticationCredentials,
+  ): Promise<AuthenticationResult> {
     try {
       let user: any = null;
 
@@ -125,40 +134,41 @@ export class AuthenticationGateway {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: "User not found",
         };
       }
 
       // Check user status
-      if (user.status !== 'ACTIVE') {
+      if (user.status !== "ACTIVE") {
         return {
           success: false,
           error: `Account ${user.status}`,
-          details: 'Contact administrator'
+          details: "Contact administrator",
         };
       }
 
       // Simplified password verification for demo
-      const passwordValid = user.passwordHash === `hashed_${credentials.password}`;
+      const passwordValid =
+        user.passwordHash === `hashed_${credentials.password}`;
       if (!passwordValid) {
         return {
           success: false,
-          error: 'Invalid credentials'
+          error: "Invalid credentials",
         };
       }
 
       // Generate session token
       const sessionToken = this.generateSessionToken(user);
 
-      // Store active session
-      const sessionId = this.generateSessionId();
+      // Store active session with proper ChittyID
+      const sessionId = await this.generateSessionId();
       this.activeSessions.set(sessionId, {
         sessionId,
         regNumber: user.regNumber,
         startTime: Date.now(),
         lastActivity: Date.now(),
-        ipAddress: '127.0.0.1', // Would be real IP in production
-        userAgent: 'ChittyChain Evidence Ledger'
+        ipAddress: "127.0.0.1", // Would be real IP in production
+        userAgent: "ChittyChain Evidence Ledger",
       });
 
       return {
@@ -169,32 +179,34 @@ export class AuthenticationGateway {
           fullName: user.fullName,
           role: user.role,
           authorizedCases: user.authorizedCases,
-          trustScore: user.trustScore
-        }
+          trustScore: user.trustScore,
+        },
       };
     } catch (error) {
       return {
         success: false,
-        error: 'Authentication failed',
-        details: error.message
+        error: "Authentication failed",
+        details: error.message,
       };
     }
   }
 
-  async verifySession(token: string): Promise<{ valid: boolean; user?: any; error?: string }> {
+  async verifySession(
+    token: string,
+  ): Promise<{ valid: boolean; user?: any; error?: string }> {
     try {
       // In a real implementation, this would verify JWT token
       // For demo, we'll just check if it's a valid format
-      if (!token || !token.startsWith('chitty_')) {
-        return { valid: false, error: 'Invalid token format' };
+      if (!token || !token.startsWith("chitty_")) {
+        return { valid: false, error: "Invalid token format" };
       }
 
       // Extract user info from token (simplified)
-      const regNumber = token.split('_')[1];
+      const regNumber = token.split("_")[1];
       const user = this.registeredUsers.get(regNumber);
 
       if (!user) {
-        return { valid: false, error: 'User not found' };
+        return { valid: false, error: "User not found" };
       }
 
       return {
@@ -203,8 +215,8 @@ export class AuthenticationGateway {
           regNumber: user.regNumber,
           fullName: user.fullName,
           role: user.role,
-          trustScore: user.trustScore
-        }
+          trustScore: user.trustScore,
+        },
       };
     } catch (error) {
       return { valid: false, error: error.message };
@@ -216,13 +228,18 @@ export class AuthenticationGateway {
     if (!user) return false;
 
     // Check if user is authorized for this case
-    return user.authorizedCases.includes(caseId) || 
-           user.role === UserType.COURT_OFFICER; // Court officers have access to all cases
+    return (
+      user.authorizedCases.includes(caseId) ||
+      user.role === UserType.COURT_OFFICER
+    ); // Court officers have access to all cases
   }
 
-  private generateRegistrationNumber(): string {
-    const random = Math.floor(Math.random() * 99999999);
-    return `REG${random.toString().padStart(8, '0')}`;
+  private async generateRegistrationNumber(): Promise<string> {
+    // Mint proper ChittyID for user registration
+    const chittyId = await mintId("REGNUM", "user-registration");
+    // Format as REG number (extract numeric portion or use timestamp)
+    const numericPart = chittyId.split("-").pop() || Date.now().toString();
+    return `REG${numericPart.toString().padStart(8, "0").substring(0, 8)}`;
   }
 
   private generateSessionToken(user: any): string {
@@ -230,8 +247,10 @@ export class AuthenticationGateway {
     return `chitty_${user.regNumber}_${Date.now()}`;
   }
 
-  private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+  private async generateSessionId(): Promise<string> {
+    // Mint proper ChittyID for session
+    const chittyId = await mintId("SESSN", "user-authentication");
+    return `session_${Date.now()}_${chittyId}`;
   }
 
   private determineSecurityLevel(role: UserType): number {
@@ -253,12 +272,17 @@ export class AuthenticationGateway {
   }
 
   // Development methods
-  getRegisteredUsers(): Array<{ regNumber: string; fullName: string; role: UserType; trustScore: number }> {
-    return Array.from(this.registeredUsers.values()).map(user => ({
+  getRegisteredUsers(): Array<{
+    regNumber: string;
+    fullName: string;
+    role: UserType;
+    trustScore: number;
+  }> {
+    return Array.from(this.registeredUsers.values()).map((user) => ({
       regNumber: user.regNumber,
       fullName: user.fullName,
       role: user.role,
-      trustScore: user.trustScore
+      trustScore: user.trustScore,
     }));
   }
 

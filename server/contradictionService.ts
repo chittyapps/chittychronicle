@@ -306,8 +306,8 @@ Respond in JSON format with this structure:
   }
 
   private async processAIResults(
-    aiResults: any, 
-    caseId: string, 
+    aiResults: any,
+    caseId: string,
     timelineEntries: TimelineEntry[]
   ): Promise<ContradictionReport[]> {
     const contradictions: ContradictionReport[] = [];
@@ -330,6 +330,9 @@ Respond in JSON format with this structure:
           chittyIdConflicts: this.extractChittyIdConflicts(contradiction)
         }
       };
+
+      // Persist to database
+      await this.persistContradictionReport(report);
 
       contradictions.push(report);
     }
@@ -420,25 +423,74 @@ Respond in JSON format with this structure:
   }
 
   private generateContradictionId(): string {
-    return `CONTR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `CONTR-${Date.now()}`;
   }
 
   /**
    * Get contradiction reports for a specific case
    */
   async getContradictionReports(caseId: string): Promise<ContradictionReport[]> {
-    // In a real implementation, this would fetch from database
-    // For now, perform fresh analysis
-    const result = await this.analyzeContradictions(caseId);
-    return result.contradictions;
+    // Fetch from database instead of re-analyzing
+    const dbContradictions = await storage.getContradictions(caseId);
+
+    return dbContradictions.map(dbContr => ({
+      id: dbContr.id,
+      caseId: dbContr.caseId || caseId,
+      timelineEntryIds: [
+        dbContr.entryId,
+        dbContr.conflictingEntryId,
+        ...(dbContr.metadata?.additionalEntryIds || [])
+      ],
+      contradictionType: (dbContr.contradictionType || 'factual') as ContradictionReport['contradictionType'],
+      severity: (dbContr.severity || 'medium') as ContradictionReport['severity'],
+      title: dbContr.title || 'Contradiction Detected',
+      description: dbContr.description || dbContr.natureOfConflict,
+      conflictingStatements: dbContr.conflictingStatements || [],
+      suggestedResolution: dbContr.suggestedResolution,
+      confidence: dbContr.confidence || 0.5,
+      detectedAt: dbContr.detectedAt || dbContr.createdAt,
+      resolvedAt: dbContr.resolvedDate || undefined,
+      resolvedBy: dbContr.resolvedBy || undefined,
+      metadata: {
+        analysisDetails: dbContr.metadata?.analysisDetails || '',
+        chittyIdConflicts: dbContr.metadata?.chittyIdConflicts || []
+      }
+    }));
   }
 
   /**
    * Resolve a contradiction
    */
   async resolveContradiction(contradictionId: string, resolvedBy: string, resolution: string): Promise<void> {
-    // In a real implementation, this would update the database
-    console.log(`Contradiction ${contradictionId} resolved by ${resolvedBy}: ${resolution}`);
+    await storage.resolveContradiction(contradictionId, resolvedBy, resolution);
+  }
+
+  /**
+   * Persist contradiction report to database
+   */
+  private async persistContradictionReport(report: ContradictionReport): Promise<void> {
+    const primaryEntryId = report.timelineEntryIds[0];
+    const conflictingEntryId = report.timelineEntryIds[1] || report.timelineEntryIds[0];
+    const additionalEntryIds = report.timelineEntryIds.slice(2);
+
+    await storage.createTimelineContradiction({
+      caseId: report.caseId,
+      entryId: primaryEntryId,
+      conflictingEntryId: conflictingEntryId,
+      contradictionType: report.contradictionType,
+      severity: report.severity,
+      title: report.title,
+      description: report.description,
+      natureOfConflict: report.description, // Backward compatibility
+      conflictingStatements: report.conflictingStatements,
+      suggestedResolution: report.suggestedResolution,
+      confidence: report.confidence,
+      detectedAt: report.detectedAt,
+      metadata: {
+        ...(report.metadata || {}),
+        additionalEntryIds
+      }
+    });
   }
 }
 

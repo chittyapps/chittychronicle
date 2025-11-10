@@ -556,7 +556,7 @@ class CloudflareFortressMCP {
   private async handleCreateEvidence(args: any) {
     const { case_id, evidence_type, description, metadata = {} } = args;
 
-    const evidenceId = crypto.randomUUID();
+    const evidenceId = await mintChittyID("APP", "ENTITY");
     const evidence: EvidenceItem = {
       id: evidenceId,
       fortress_job_id: '',

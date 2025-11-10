@@ -1,11 +1,13 @@
 import type { Express } from "express";
+import fs from "fs";
+import path from "path";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { chittyAuth, isAuthenticated, hasRole, hasPermission } from "./chittyAuth";
 import { z } from "zod";
-import { 
-  insertCaseSchema, 
-  insertTimelineEntrySchema, 
+import {
+  insertCaseSchema,
+  insertTimelineEntrySchema,
   insertTimelineSourceSchema,
   insertDataIngestionJobSchema,
   insertMcpIntegrationSchema,
@@ -20,10 +22,228 @@ import {
 import { ingestionService } from "./ingestionService";
 import { mcpService } from "./mcpService";
 import { chittyTrust } from "./chittyTrust";
+import { emitContextEvent } from "./contextEmitter";
 import { chittyBeacon } from "./chittyBeacon";
 import { contradictionService } from "./contradictionService";
+import { requireServiceTokenIfConfigured } from './middleware/authz';
+import { communicationsService } from "./communicationsService";
+import { chittyConnect } from "./chittyConnectClient";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint (ChittyGov standard)
+  app.get('/health', (req, res) => {
+    res.json({
+      status: 'healthy',
+      service: 'chittychronicle',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
+  // Discovery endpoints (.well-known) and OpenAPI
+  app.get('/.well-known/chronicle-manifest.json', (req, res) => {
+    try {
+      const manifestPath = path.resolve(process.cwd(), 'server', 'registry-manifest.json');
+      if (fs.existsSync(manifestPath)) {
+        res.sendFile(manifestPath);
+      } else {
+        res.status(404).json({ message: 'Manifest not found' });
+      }
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to load manifest' });
+    }
+  });
+
+  // Standard service discovery path
+  app.get('/.well-known/service-manifest.json', (req, res) => {
+    try {
+      const manifestPath = path.resolve(process.cwd(), 'server', 'registry-manifest.json');
+      if (fs.existsSync(manifestPath)) {
+        res.sendFile(manifestPath);
+      } else {
+        res.status(404).json({ message: 'Manifest not found' });
+      }
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to load manifest' });
+    }
+  });
+
+  app.get('/openapi.json', (req, res) => {
+    try {
+      const openapiPath = path.resolve(process.cwd(), 'server', 'openapi.json');
+      if (fs.existsSync(openapiPath)) {
+        res.sendFile(openapiPath);
+      } else {
+        res.status(404).json({ message: 'OpenAPI spec not found' });
+      }
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to load OpenAPI spec' });
+    }
+  });
+
+  // Serve MCP manifest for discovery if requested by aggregator/clients
+  app.get('/.well-known/mcp-manifest.json', (req, res) => {
+    try {
+      const mcpPath = path.resolve(process.cwd(), 'server', 'mcp.manifest.json');
+      if (fs.existsSync(mcpPath)) {
+        res.sendFile(mcpPath);
+      } else {
+        res.status(404).json({ message: 'MCP manifest not found' });
+      }
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to load MCP manifest' });
+    }
+  });
+
+  // Registry inventory preview (no external calls; returns a plan)
+  app.get('/api/admin/registry/preview', (req, res) => {
+    try {
+      const mcpBase = process.env.CHITTYMCP_BASE_URL || 'https://mcp.chitty.cc';
+      const cfPath = '/cf';
+      const plan = {
+        description: 'Read-only inventory plan via MCP (no execution in preview).',
+        mcp_base: mcpBase,
+        steps: [
+          {
+            name: 'cloudflare:accounts',
+            method: 'GET',
+            path: `${cfPath}/accounts`,
+          },
+          {
+            name: 'cloudflare:zones',
+            method: 'GET',
+            path: `${cfPath}/accounts/{account_id}/zones`,
+          },
+          {
+            name: 'cloudflare:workers',
+            method: 'GET',
+            path: `${cfPath}/accounts/{account_id}/workers`,
+          },
+          {
+            name: 'cloudflare:routes',
+            method: 'GET',
+            path: `${cfPath}/zones/{zone_id}/workers/routes`,
+          },
+        ],
+        note: 'Use scripts/mcp/run_cf_inventory_with_op.sh to execute against MCP with OP-provided CF Access headers.',
+      };
+      res.json(plan);
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to build preview' });
+    }
+  });
+
+  // Execute read-only Cloudflare inventory via MCP (requires env creds)
+  app.post('/api/admin/registry/run', async (req: any, res) => {
+    try {
+      const mcpBase = (process.env.MCP_CF_BASE || process.env.CHITTYMCP_BASE_URL && `${process.env.CHITTYMCP_BASE_URL.replace(/\/$/, '')}/cf`) || '';
+      if (!mcpBase) {
+        return res.status(412).json({ message: 'MCP_CF_BASE or CHITTYMCP_BASE_URL not set' });
+      }
+
+      const headers: Record<string, string> = {};
+      if (process.env.CF_ACCESS_CLIENT_ID && process.env.CF_ACCESS_CLIENT_SECRET) {
+        headers['CF-Access-Client-Id'] = process.env.CF_ACCESS_CLIENT_ID;
+        headers['CF-Access-Client-Secret'] = process.env.CF_ACCESS_CLIENT_SECRET;
+      } else if (process.env.AUTH_BEARER) {
+        headers['Authorization'] = `Bearer ${process.env.AUTH_BEARER}`;
+      } else {
+        return res.status(412).json({ message: 'Missing CF Access headers or AUTH_BEARER' });
+      }
+
+      const mode = (req.query.mode as string) || 'lite'; // lite | standard | deep
+      const accountsFilter = (req.query.accounts as string) || '';
+      const reportsDir = path.resolve(process.cwd(), 'reports', 'cloudflare-mcp');
+      fs.mkdirSync(reportsDir, { recursive: true });
+
+      // health (best-effort)
+      try {
+        const h = await fetch(`${mcpBase}/health`, { headers });
+        if (h.ok) {
+          const healthJson = await h.json().catch(() => ({}));
+          fs.writeFileSync(path.join(reportsDir, 'health.json'), JSON.stringify(healthJson, null, 2));
+        }
+      } catch {}
+
+      // accounts
+      const accResp = await fetch(`${mcpBase}/accounts`, { headers });
+      if (!accResp.ok) {
+        const text = await accResp.text();
+        return res.status(accResp.status).json({ message: 'accounts failed', detail: text });
+      }
+      const accounts = await accResp.json();
+      fs.writeFileSync(path.join(reportsDir, 'accounts.json'), JSON.stringify(accounts, null, 2));
+
+      let accountIds: string[] = [];
+      if (Array.isArray(accounts)) {
+        accountIds = accounts.map((a: any) => a.id).filter(Boolean);
+      } else if (accounts?.result) {
+        accountIds = accounts.result.map((a: any) => a.id).filter(Boolean);
+      }
+      if (accountsFilter) {
+        const set = new Set(accountsFilter.split(',').map(s => s.trim()));
+        accountIds = accountIds.filter(id => set.has(id));
+      }
+
+      // Limit accounts in deep runs to reduce costs if not filtered
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 5;
+      if (!accountsFilter && accountIds.length > limit) accountIds = accountIds.slice(0, limit);
+
+      const results: any[] = [];
+      for (const acc of accountIds) {
+        // zones
+        const zResp = await fetch(`${mcpBase}/accounts/${acc}/zones`, { headers });
+        const zonesJson = zResp.ok ? await zResp.json() : { error: zResp.status };
+        fs.writeFileSync(path.join(reportsDir, `zones-${acc}.json`), JSON.stringify(zonesJson, null, 2));
+
+        if (mode !== 'lite') {
+          // workers list
+          const wResp = await fetch(`${mcpBase}/accounts/${acc}/workers`, { headers });
+          const workersJson = wResp.ok ? await wResp.json() : { error: wResp.status };
+          fs.writeFileSync(path.join(reportsDir, `workers-${acc}.json`), JSON.stringify(workersJson, null, 2));
+
+          if (mode === 'deep') {
+            // routes per zone
+            let zoneIds: string[] = [];
+            if (Array.isArray(zonesJson)) zoneIds = zonesJson.map((z: any) => z.id).filter(Boolean);
+            else if (zonesJson?.result) zoneIds = zonesJson.result.map((z: any) => z.id).filter(Boolean);
+
+            for (const zid of zoneIds.slice(0, limit)) {
+              const rResp = await fetch(`${mcpBase}/zones/${zid}/workers/routes`, { headers });
+              const routesJson = rResp.ok ? await rResp.json() : { error: rResp.status };
+              fs.writeFileSync(path.join(reportsDir, `routes-${zid}.json`), JSON.stringify(routesJson, null, 2));
+            }
+            // observability
+            const oResp = await fetch(`${mcpBase}/accounts/${acc}/workers/observability?days=7`, { headers });
+            const obsJson = oResp.ok ? await oResp.json() : { error: oResp.status };
+            fs.writeFileSync(path.join(reportsDir, `observability-${acc}.json`), JSON.stringify(obsJson, null, 2));
+          }
+        }
+
+        results.push({ account: acc, zones: true, workers: mode !== 'lite', deep: mode === 'deep' });
+      }
+
+      res.json({ message: 'completed', results, reportsDir: 'reports/cloudflare-mcp' });
+    } catch (err: any) {
+      res.status(500).json({ message: 'inventory run failed', error: err?.message });
+    }
+  });
+
+  // Return local registration plan and TODO (files under reports/)
+  app.get('/api/admin/registry/plan', (req, res) => {
+    try {
+      const reportsDir = path.resolve(process.cwd(), 'reports');
+      const planPath = path.join(reportsDir, 'MASTER_REGISTRATION_PLAN.md');
+      const todoPath = path.join(reportsDir, 'REGISTRATION_TODO.md');
+      const out: any = { plan: null, todo: null };
+      if (fs.existsSync(planPath)) out.plan = fs.readFileSync(planPath, 'utf-8');
+      if (fs.existsSync(todoPath)) out.todo = fs.readFileSync(todoPath, 'utf-8');
+      res.json(out);
+    } catch (e) {
+      res.status(500).json({ message: 'Failed to read plan/TODO' });
+    }
+  });
   // ChittyID authentication - graceful degradation for development
   try {
     await chittyAuth.setupAuth(app);
@@ -40,6 +260,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       auth: 'ChittyAuth',
       timestamp: new Date().toISOString() 
     });
+  });
+
+  // ==========================
+  // AUTHORITY-OF-EVENTS (REST)
+  // ==========================
+  // Create event authority record (wraps timeline entry creation)
+  app.post('/api/v1/events', requireServiceTokenIfConfigured, async (req: any, res) => {
+    try {
+      const entryData = insertTimelineEntrySchema.parse({
+        ...req.body,
+        createdBy: 'demo-user',
+        modifiedBy: 'demo-user',
+      });
+      const entry = await storage.createTimelineEntry(entryData);
+      emitContextEvent('timeline.entry.created', {
+        subject_id: entry.chittyId || entry.id,
+        related_ids: [entry.caseId],
+        payload: {
+          entryId: entry.id,
+          caseId: entry.caseId,
+          entryType: entry.entryType,
+          confidenceLevel: entry.confidenceLevel,
+        },
+      });
+      res.status(201).json({ success: true, entry });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: 'Invalid event data', errors: error.errors });
+      }
+      res.status(500).json({ success: false, message: 'Failed to create event' });
+    }
+  });
+
+  // Get event authority view
+  app.get('/api/v1/events/:id', requireServiceTokenIfConfigured, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { caseId } = req.query;
+      const entry = await storage.getTimelineEntry(id, caseId as string | undefined);
+      if (!entry) return res.status(404).json({ success: false, message: 'Event not found' });
+      res.json({ success: true, entry });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch event' });
+    }
+  });
+
+  // Verify event (trust scoring)
+  app.post('/api/v1/events/:id/verify', requireServiceTokenIfConfigured, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { caseId } = req.query;
+      const entry = await storage.getTimelineEntry(id, caseId as string | undefined);
+      if (!entry) return res.status(404).json({ success: false, message: 'Event not found' });
+      const trustScore = await chittyTrust.calculateTrustScore(entry);
+      await emitContextEvent('timeline.entry.verified', {
+        subject_id: entry.chittyId || entry.id,
+        related_ids: [entry.caseId],
+        payload: { entryId: entry.id, caseId: entry.caseId, trustScore },
+      });
+      res.json({ success: true, trustScore });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to verify event' });
+    }
+  });
+
+  // Mint event attestation (soft-mint local; hard-mint only in production code path)
+  app.post('/api/v1/events/:id/mint', requireServiceTokenIfConfigured, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { caseId } = req.query;
+      const entry = await storage.getTimelineEntry(id, caseId as string | undefined);
+      if (!entry) return res.status(404).json({ success: false, message: 'Event not found' });
+      const trustScore = await chittyTrust.calculateTrustScore(entry);
+      const attestation = await chittyTrust.createAttestation(entry, trustScore);
+      await emitContextEvent('timeline.entry.minted', {
+        subject_id: entry.chittyId || entry.id,
+        related_ids: [entry.caseId],
+        payload: {
+          entryId: entry.id,
+          caseId: entry.caseId,
+          attestation: {
+            hash: attestation.attestationHash,
+            txId: attestation.blockchainTxId,
+            score: trustScore.score,
+            confidence: trustScore.confidence,
+          },
+        },
+      });
+      res.json({ success: true, attestation });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to mint event' });
+    }
+  });
+
+  // Certify event (policy-based) — returns 501 unless configured
+  app.post('/api/v1/events/:id/certify', requireServiceTokenIfConfigured, async (req: any, res) => {
+    try {
+      const certifyBase = process.env.CHITTYCERTIFY_BASE_URL || process.env.CHITTY_CERTIFY_URL;
+      if (!certifyBase) {
+        return res.status(501).json({ success: false, message: 'Certification service not configured (CHITTYCERTIFY_BASE_URL)' });
+      }
+      const { id } = req.params;
+      const { caseId } = req.query;
+      const entry = await storage.getTimelineEntry(id, caseId as string | undefined);
+      if (!entry) return res.status(404).json({ success: false, message: 'Event not found' });
+      // Stub acknowledge only (no external call here)
+      res.json({ success: true, certification: { requested: true, service: certifyBase } });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to certify event' });
+    }
   });
 
   // Authentication endpoints
@@ -317,6 +647,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const entry = await storage.createTimelineEntry(entryData);
+      // Emit context event (best-effort; local write + optional network)
+      emitContextEvent('timeline.entry.created', {
+        subject_id: entry.chittyId || entry.id,
+        related_ids: [entry.caseId],
+        payload: {
+          entryId: entry.id,
+          caseId: entry.caseId,
+          entryType: entry.entryType,
+          confidenceLevel: entry.confidenceLevel,
+        },
+      });
       res.status(201).json(entry);
     } catch (error) {
       console.error("Error creating timeline entry:", error);
@@ -344,6 +685,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const entry = await storage.createTimelineEntry(entryData);
+      // Emit context event (best-effort)
+      emitContextEvent('timeline.entry.created', {
+        subject_id: entry.chittyId || entry.id,
+        related_ids: [caseId],
+        payload: {
+          entryId: entry.id,
+          caseId: entry.caseId,
+          entryType: entry.entryType,
+          confidenceLevel: entry.confidenceLevel,
+        },
+      });
       res.status(201).json(entry);
     } catch (error) {
       console.error("Error creating timeline entry:", error);
@@ -1063,40 +1415,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cross-Source Communications Analytics
+  // ChittyConnect Integration - Sync messages from platforms
+  app.post('/api/cases/:caseId/communications/sync', async (req: any, res) => {
+    try {
+      const { caseId } = req.params;
+      const { platforms, startDate, endDate } = req.body;
+
+      const result = await communicationsService.syncMessagesFromChittyConnect({
+        caseId,
+        platforms,
+        startDate,
+        endDate,
+      });
+
+      res.json({
+        success: true,
+        synced: result.synced,
+        messages: result.messages,
+      });
+    } catch (error) {
+      console.error("Error syncing messages from ChittyConnect:", error);
+      res.status(500).json({ message: "Failed to sync messages" });
+    }
+  });
+
+  // Cross-Source Communications Analytics (now powered by ChittyConnect)
   app.get('/api/cases/:caseId/communications-summary', async (req: any, res) => {
     try {
       const caseId = req.params.caseId;
-      
-      // Get counts and summary statistics
-      const [parties, conversations, messages] = await Promise.all([
-        storage.findPartiesByCase(caseId),
-        storage.listConversationsByCase(caseId),
-        storage.listMessagesByCase(caseId)
-      ]);
-
-      // Group messages by source
-      const messagesBySource = messages.reduce((acc: any, message: any) => {
-        acc[message.source] = (acc[message.source] || 0) + 1;
-        return acc;
-      }, {});
-
-      res.json({
-        summary: {
-          totalParties: parties.length,
-          totalConversations: conversations.length,
-          totalMessages: messages.length,
-          messagesBySource,
-        },
-        parties: parties.slice(0, 10), // Latest 10 parties
-        recentMessages: messages.slice(0, 20), // Latest 20 messages
-      });
+      const summary = await communicationsService.getCommunicationsSummary(caseId);
+      res.json(summary);
     } catch (error) {
       console.error("Error fetching communications summary:", error);
       res.status(500).json({ message: "Failed to fetch communications summary" });
     }
   });
 
+<<<<<<< HEAD
   // Evidence Orchestrator Routes
   const { evidenceOrchestrator } = await import('./evidenceOrchestrator');
 
@@ -1207,6 +1562,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error processing pending distributions:", error);
       res.status(500).json({ message: "Failed to process pending distributions" });
+=======
+  // Generate timeline from messages using ChittyConnect AI
+  app.post('/api/cases/:caseId/communications/generate-timeline', async (req: any, res) => {
+    try {
+      const { caseId } = req.params;
+      const { conversationId } = req.body;
+
+      const result = await communicationsService.generateTimelineFromMessages({
+        caseId,
+        conversationId,
+      });
+
+      res.json({
+        success: true,
+        generated: result.generated,
+        entries: result.entries,
+      });
+    } catch (error) {
+      console.error("Error generating timeline from messages:", error);
+      res.status(500).json({ message: "Failed to generate timeline" });
+    }
+  });
+
+  // ChittyConnect Ecosystem Health
+  app.get('/api/chittyconnect/ecosystem/health', async (req: any, res) => {
+    try {
+      const health = await chittyConnect.getEcosystemAwareness();
+      res.json(health);
+    } catch (error) {
+      console.error("Error fetching ecosystem health:", error);
+      res.status(500).json({ message: "Failed to fetch ecosystem health" });
+>>>>>>> 9444e8cfe419d5ae9eb1099e161e77231a9b75ab
     }
   });
 

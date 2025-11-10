@@ -1,5 +1,6 @@
 import type { InsertMcpIntegration, McpIntegration } from "@shared/schema";
 import { storage } from "./storage";
+import { emitContextEvent } from "./contextEmitter";
 
 export interface McpTimelineData {
   entries: Array<{
@@ -192,16 +193,26 @@ export class McpIntegrationService {
       switch (action) {
         case 'create_timeline_entry':
           return await this.handleCreateTimelineEntry(payload, userId);
-          
+
         case 'analyze_case':
           return await this.handleAnalyzeCase(payload, userId);
-          
+
         case 'ingest_documents':
           return await this.handleIngestDocuments(payload, userId);
-          
+
         case 'get_timeline':
           return await this.handleGetTimeline(payload, userId);
-          
+
+        // New actions aligned with manifest
+        case 'verify_event':
+          return await this.handleVerifyEvent(payload);
+
+        case 'certify_event':
+          return await this.handleCertifyEvent(payload);
+
+        case 'mint_event':
+          return await this.handleMintEvent(payload);
+
         default:
           return {
             success: false,
@@ -216,6 +227,123 @@ export class McpIntegrationService {
         error: `Server error: ${error}`,
         statusCode: 500
       };
+    }
+  }
+
+  private async handleVerifyEvent(payload: any): Promise<McpApiResponse> {
+    try {
+      const { caseId, entryId } = payload;
+      if (!caseId || !entryId) {
+        return { success: false, error: 'caseId and entryId are required', statusCode: 400 };
+      }
+
+      const entry = await storage.getTimelineEntry(entryId, caseId);
+      if (!entry) {
+        return { success: false, error: 'Entry not found', statusCode: 404 };
+      }
+
+      const { chittyTrust } = await import('./chittyTrust');
+      const trustScore = await chittyTrust.calculateTrustScore(entry);
+
+      await emitContextEvent('timeline.entry.verified', {
+        subject_id: entry.chittyId || entry.id,
+        related_ids: [caseId],
+        payload: {
+          entryId,
+          caseId,
+          trustScore,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          entryId,
+          caseId,
+          trustScore,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: `Failed to verify event: ${error}`, statusCode: 500 };
+    }
+  }
+
+  private async handleCertifyEvent(payload: any): Promise<McpApiResponse> {
+    try {
+      const { caseId, entryId } = payload;
+      if (!caseId || !entryId) {
+        return { success: false, error: 'caseId and entryId are required', statusCode: 400 };
+      }
+
+      // For now, certification requires external service configuration.
+      const certifyBase = process.env.CHITTYCERTIFY_BASE_URL || process.env.CHITTY_CERTIFY_URL;
+      if (!certifyBase) {
+        return {
+          success: false,
+          error: 'Certification service not configured (CHITTYCERTIFY_BASE_URL)',
+          statusCode: 501,
+        };
+      }
+
+      // Minimal local acknowledgment; external call intentionally not performed here to avoid side effects.
+      return {
+        success: true,
+        data: {
+          entryId,
+          caseId,
+          certification: {
+            requested: true,
+            service: certifyBase,
+          },
+        },
+      };
+    } catch (error) {
+      return { success: false, error: `Failed to certify event: ${error}`, statusCode: 500 };
+    }
+  }
+
+  private async handleMintEvent(payload: any): Promise<McpApiResponse> {
+    try {
+      const { caseId, entryId } = payload;
+      if (!caseId || !entryId) {
+        return { success: false, error: 'caseId and entryId are required', statusCode: 400 };
+      }
+
+      const entry = await storage.getTimelineEntry(entryId, caseId);
+      if (!entry) {
+        return { success: false, error: 'Entry not found', statusCode: 404 };
+      }
+
+      const { chittyTrust } = await import('./chittyTrust');
+      const trustScore = await chittyTrust.calculateTrustScore(entry);
+      const attestation = await chittyTrust.createAttestation(entry, trustScore);
+
+      // Emit context (best-effort)
+      await emitContextEvent('timeline.entry.minted', {
+        subject_id: entry.chittyId || entry.id,
+        related_ids: [caseId],
+        payload: {
+          entryId,
+          caseId,
+          attestation: {
+            hash: attestation.attestationHash,
+            txId: attestation.blockchainTxId,
+            score: trustScore.score,
+            confidence: trustScore.confidence,
+          },
+        }
+      });
+
+      return {
+        success: true,
+        data: {
+          entryId,
+          caseId,
+          attestation,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: `Failed to mint event: ${error}`, statusCode: 500 };
     }
   }
   

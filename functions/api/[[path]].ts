@@ -202,7 +202,7 @@ async function handleTimelineEndpoint(
     const body = await request.json();
     
     // Generate ChittyID
-    const chittyId = `CT-${crypto.randomUUID().substring(0, 8).toUpperCase()}`;
+    const chittyId = `CT-${`pending-id-${Date.now()}`.substring(0, 8).toUpperCase()}`;
     
     // Insert into database
     const result = await env.DB.prepare(

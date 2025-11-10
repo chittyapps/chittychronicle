@@ -1,0 +1,449 @@
+# ChittyCFD v1.0 - ARIBIA LLC Litigation Configuration
+# Arias v Bianchi 2024D007847 - Autonomous Legal Intelligence Platform
+
+service:
+  name: "aribia-chronicle"
+  display_name: "ARIBIA Chronicle"
+  version: "1.0.0"
+  port: 5000
+  environment: "production"
+
+# ChittyOS API v2.0 Compliance
+chittyos:
+  api_version: "2.0"
+  service_id: "aribia-chronicle-001"
+  health_endpoint: "/health"
+  discovery_endpoint: "/api/v1/discovery"
+  events_endpoint: "/api/v1/events"
+
+  # Autonomous Capabilities
+  capabilities:
+    self_heal: true
+    predict_failures: true
+    auto_scale: true
+    event_shipping: true
+
+  # Service Health
+  health_checks:
+    interval: "30s"
+    timeout: "5s"
+    retries: 3
+
+# Case Configuration
+business:
+  client:
+    name: "ARIBIA LLC"
+    type: "plaintiff"
+
+  case:
+    name: "Arias v Bianchi"
+    number: "2024D007847"
+    jurisdiction: "Circuit Court of Cook County"
+    county: "Cook"
+    state: "Illinois"
+    case_type: "dissolution_tro_fraud"
+    filing_date: "2024-07-15"
+    priority: "critical"
+
+  parties:
+    plaintiff:
+      name: "ARIBIA LLC (c/o Nicolas Arias)"
+      represented_by: "Nicolas Arias (Pro Se)"
+
+    defendant:
+      name: "Bianchi, Ivana"
+      represented_by: "Unknown"
+
+  legal_claims:
+    - "Marital Dissolution"
+    - "Fraudulent TRO Procurement"
+    - "Perjury (False Sworn Statements)"
+    - "Pre-Marital Property Rights"
+    - "Rule 137 Sanctions"
+    - "Discovery Sanctions"
+    - "Contempt of Court"
+
+  strategic_objectives:
+    - "Expose contradictory testimony and false statements"
+    - "Establish pre-marital property ownership"
+    - "Obtain Rule 137 sanctions for frivolous filings"
+    - "Secure contempt ruling for TRO violations"
+    - "Recover attorney fees and costs"
+
+# Evidence Configuration
+evidence:
+  # Primary Evidence Source
+  source_paths:
+    - path: "/Users/nb/Library/Mobile Documents/com~apple~CloudDocs/_bulk_hogs/_ORGANIZED"
+      name: "Marie Kondo Organized Evidence"
+      auto_import: true
+      watch_enabled: true
+      watch_interval: "5m"
+      patterns:
+        - "*.pdf"
+        - "*.docx"
+        - "*.txt"
+        - "*.rtf"
+        - "*.jpg"
+        - "*.png"
+        - "*.msg"
+        - "*.eml"
+      exclude_patterns:
+        - "*.log"
+        - "*.tmp"
+        - "*.DS_Store"
+        - "**/node_modules/**"
+
+  # Evidence Processing
+  processing:
+    marie_kondo_enabled: true
+    auto_categorization: true
+    duplicate_detection: true
+    hash_verification: true
+    ocr_enabled: true
+    metadata_extraction: true
+    timeline_correlation: true
+    contradiction_detection: true
+    truth_scoring: true
+    chain_of_custody_tracking: true
+
+  # Evidence Categories
+  categories:
+    - name: "financial_records"
+      priority: "high"
+      keywords: ["bank", "statement", "account", "transaction", "wire", "check"]
+
+    - name: "property_documentation"
+      priority: "critical"
+      keywords: ["deed", "title", "mortgage", "lease", "property", "real estate"]
+
+    - name: "communication_records"
+      priority: "high"
+      keywords: ["email", "text", "message", "letter", "correspondence"]
+
+    - name: "court_filings"
+      priority: "critical"
+      keywords: ["petition", "motion", "response", "order", "judgment", "filing"]
+
+    - name: "sworn_statements"
+      priority: "critical"
+      keywords: ["affidavit", "deposition", "testimony", "sworn", "oath"]
+
+    - name: "contradictory_evidence"
+      priority: "critical"
+      keywords: ["contradiction", "inconsistent", "false", "perjury"]
+
+    - name: "supporting_documentation"
+      priority: "medium"
+      keywords: ["receipt", "invoice", "contract", "agreement"]
+
+# Agentic Configuration
+agents:
+  # Evidence Processing Agent
+  evidence_processor:
+    enabled: true
+    auto_start: true
+    processing_interval: "5m"
+    batch_size: 50
+    max_concurrent: 5
+    retry_failed: true
+    retry_attempts: 3
+
+    capabilities:
+      - "auto_ingest"
+      - "categorize"
+      - "deduplicate"
+      - "ocr_processing"
+      - "metadata_extraction"
+      - "hash_verification"
+      - "timeline_correlation"
+
+    ai_model:
+      provider: "anthropic"
+      model: "claude-sonnet-4-20250514"
+      temperature: 0.1
+      max_tokens: 4000
+
+  # Contradiction Analysis Agent
+  contradiction_analyzer:
+    enabled: true
+    auto_start: true
+    analysis_interval: "15m"
+    confidence_threshold: 0.85
+    cross_reference_enabled: true
+
+    capabilities:
+      - "detect_contradictions"
+      - "truth_scoring"
+      - "cross_reference"
+      - "witness_consistency"
+      - "timeline_validation"
+
+    contradiction_types:
+      - "temporal"      # Timeline inconsistencies
+      - "factual"       # Contradictory facts
+      - "witness"       # Inconsistent testimony
+      - "location"      # Location contradictions
+      - "entity"        # Entity misidentification
+      - "logical"       # Logical impossibilities
+
+    severity_levels:
+      critical: 0.9    # Clear perjury/fraud
+      high: 0.7        # Significant inconsistency
+      medium: 0.5      # Minor discrepancy
+      low: 0.3         # Potential variation
+
+    ai_model:
+      provider: "anthropic"
+      model: "claude-sonnet-4-20250514"
+      temperature: 0.0
+      max_tokens: 8000
+
+  # Timeline Synthesis Agent
+  timeline_synthesizer:
+    enabled: true
+    auto_start: true
+    synthesis_interval: "10m"
+    auto_update: true
+    event_correlation: true
+    gap_detection: true
+
+    capabilities:
+      - "timeline_generation"
+      - "event_correlation"
+      - "gap_detection"
+      - "chronology_validation"
+      - "relationship_mapping"
+
+  # Strategic Analysis Agent
+  strategy_advisor:
+    enabled: true
+    auto_start: true
+    analysis_interval: "30m"
+    predictive_analytics: true
+    case_outcome_modeling: true
+
+    capabilities:
+      - "predictive_analytics"
+      - "case_strength_assessment"
+      - "strategic_recommendations"
+      - "risk_analysis"
+      - "settlement_probability"
+
+    models:
+      case_outcome:
+        enabled: true
+        factors:
+          - "evidence_strength"
+          - "contradiction_severity"
+          - "witness_credibility"
+          - "legal_precedent"
+          - "judge_history"
+
+      settlement_probability:
+        enabled: true
+        thresholds:
+          high: 0.7
+          medium: 0.4
+          low: 0.2
+
+  # Autonomous Litigation Agent
+  litigation_responder:
+    enabled: true
+    auto_start: true
+    monitoring_interval: "1h"
+    auto_generate_responses: false  # Require human approval
+
+    capabilities:
+      - "deadline_monitoring"
+      - "document_generation"
+      - "filing_automation"
+      - "discovery_management"
+
+    document_templates:
+      - "motion_for_sanctions"
+      - "response_to_petition"
+      - "contempt_petition"
+      - "discovery_response"
+      - "affidavit"
+      - "exhibit_index"
+
+# ChittyOS Ecosystem Integration
+integrations:
+  # ChittyChain - Immutable Evidence Tracking
+  chittychain:
+    enabled: true
+    url: "http://localhost:5001"
+    api_key: "${CHITTYCHAIN_API_KEY}"
+    auto_mint_evidence: true
+    verification_level: "high"
+    immutable_timeline: true
+
+    mint_triggers:
+      - "evidence_uploaded"
+      - "timeline_entry_created"
+      - "contradiction_detected"
+      - "document_generated"
+
+  # ChittyID - Identity and Authentication
+  chittyid:
+    enabled: true
+    url: "http://localhost:5003"
+    service_token: "${CHITTYID_SERVICE_TOKEN}"
+    auth_required: true
+    audit_trail: true
+
+  # ChittyChat - Project Management
+  chittychat:
+    enabled: true
+    url: "http://localhost:5000"
+    project_id: "arias-v-bianchi-2024D007847"
+    auto_sync: true
+    task_creation: true
+
+    sync_events:
+      - "deadline_approaching"
+      - "contradiction_detected"
+      - "document_generated"
+      - "filing_required"
+
+  # ChittyBeacon - Real-time Alerting
+  chittybeacon:
+    enabled: true
+    url: "https://api.chittybeacon.com/v1"
+    api_key: "${CHITTYBEACON_API_KEY}"
+
+    alert_triggers:
+      - event: "deadline_approaching"
+        advance_warnings: ["7d", "3d", "1d", "4h"]
+        channels: ["email", "sms", "push"]
+
+      - event: "contradiction_detected"
+        severity: ["critical", "high"]
+        channels: ["email", "push"]
+
+      - event: "evidence_processing_complete"
+        channels: ["push"]
+
+  # ChittyConnect - Context Sharing
+  chittyconnect:
+    enabled: true
+    url: "${CHITTYCONNECT_BASE_URL}"
+    service_token: "${CHITTYCHRONICLE_SERVICE_TOKEN}"
+
+    event_types:
+      - "case_created"
+      - "evidence_uploaded"
+      - "timeline_entry_added"
+      - "contradiction_detected"
+      - "document_generated"
+
+# Database Configuration
+database:
+  provider: "neon"
+  url: "${DATABASE_URL}"
+  pool:
+    min: 5
+    max: 25
+    idle_timeout: "10m"
+
+  migrations:
+    auto_migrate: true
+    backup_before: true
+
+  backup:
+    enabled: true
+    frequency: "daily"
+    retention: "90d"
+
+# AI Configuration
+ai:
+  provider: "anthropic"
+  api_key: "${ANTHROPIC_API_KEY}"
+
+  models:
+    contradiction_detection:
+      model: "claude-sonnet-4-20250514"
+      temperature: 0.0
+      max_tokens: 8000
+
+    evidence_analysis:
+      model: "claude-sonnet-4-20250514"
+      temperature: 0.1
+      max_tokens: 4000
+
+    document_generation:
+      model: "claude-sonnet-4-20250514"
+      temperature: 0.3
+      max_tokens: 16000
+
+  rate_limits:
+    requests_per_minute: 50
+    tokens_per_minute: 100000
+
+# Legal-Specific Features
+legal:
+  # Deadline Monitoring
+  deadline_monitoring:
+    enabled: true
+    advance_warnings: ["7d", "3d", "1d", "4h", "1h"]
+    auto_calendar_sync: false
+
+  # Document Generation
+  document_generation:
+    templates_enabled: true
+    auto_populate: true
+    legal_review_required: true
+    digital_signature: false
+
+  # Compliance and Security
+  compliance:
+    attorney_client_privilege: true
+    work_product_protection: true
+    evidence_chain_custody: true
+    audit_logging: true
+    encryption_at_rest: true
+    encryption_in_transit: true
+
+  # Discovery Management
+  discovery:
+    auto_response: false
+    deadline_tracking: true
+    objection_templates: true
+    privilege_log: true
+
+# Monitoring and Observability
+monitoring:
+  enabled: true
+
+  metrics:
+    - "evidence_processing_rate"
+    - "contradiction_detection_rate"
+    - "agent_health"
+    - "api_response_time"
+    - "database_performance"
+
+  logging:
+    level: "info"
+    format: "json"
+    destination: "stdout"
+
+  tracing:
+    enabled: true
+    sample_rate: 0.1
+
+# Performance Configuration
+performance:
+  caching:
+    enabled: true
+    ttl: "1h"
+    max_size: "1GB"
+
+  concurrency:
+    max_workers: 10
+    queue_size: 1000
+
+  timeouts:
+    api_request: "30s"
+    ai_analysis: "120s"
+    database_query: "10s"
