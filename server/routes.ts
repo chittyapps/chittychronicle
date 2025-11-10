@@ -1451,9 +1451,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-<<<<<<< HEAD
   // Evidence Orchestrator Routes
-  const { evidenceOrchestrator } = await import('./evidenceOrchestrator');
+  const { EvidenceOrchestrator } = await import('./evidenceOrchestrator');
+  const evidenceOrchestrator = new EvidenceOrchestrator();
 
   // Create evidence envelope
   app.post('/api/evidence/envelopes', async (req: any, res) => {
@@ -1523,6 +1523,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard API: Get all evidence distributions with filtering
+  app.get('/api/evidence/distributions', async (req: any, res) => {
+    try {
+      const { caseId, status, target, limit, offset } = req.query;
+      const distributions = await storage.getAllEvidenceDistributions(caseId, {
+        status,
+        target,
+        limit: limit ? parseInt(limit) : undefined,
+        offset: offset ? parseInt(offset) : undefined,
+      });
+      res.json(distributions);
+    } catch (error) {
+      console.error("Error fetching all distributions:", error);
+      res.status(500).json({ message: "Failed to fetch distributions" });
+    }
+  });
+
+  // Dashboard API: Get outbound messages with filtering
+  app.get('/api/evidence/outbound-messages', async (req: any, res) => {
+    try {
+      const { distributionId, status, target, limit } = req.query;
+      const messages = await storage.getOutboundMessages(distributionId, {
+        status,
+        target,
+        limit: limit ? parseInt(limit) : undefined,
+      });
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching outbound messages:", error);
+      res.status(500).json({ message: "Failed to fetch outbound messages" });
+    }
+  });
+
   // Get effective permissions for an envelope
   app.get('/api/evidence/envelopes/:id/permissions', async (req: any, res) => {
     try {
@@ -1562,7 +1595,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error processing pending distributions:", error);
       res.status(500).json({ message: "Failed to process pending distributions" });
-=======
+    }
+  });
+
   // Generate timeline from messages using ChittyConnect AI
   app.post('/api/cases/:caseId/communications/generate-timeline', async (req: any, res) => {
     try {
@@ -1593,7 +1628,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching ecosystem health:", error);
       res.status(500).json({ message: "Failed to fetch ecosystem health" });
->>>>>>> 9444e8cfe419d5ae9eb1099e161e77231a9b75ab
     }
   });
 
