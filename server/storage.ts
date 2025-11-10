@@ -59,7 +59,7 @@ import {
   type OutboundMessage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, or, like, isNull } from "drizzle-orm";
+import { eq, desc, and, gte, lte, or, like, isNull, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -1022,8 +1022,6 @@ export class DatabaseStorage implements IStorage {
     limit?: number;
     offset?: number;
   }): Promise<EvidenceDistribution[]> {
-    let query = db.select().from(evidenceDistributions);
-
     const conditions = [];
     
     if (caseId) {
@@ -1047,21 +1045,28 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(evidenceDistributions.target, filters.target as any));
     }
 
+    // Build the query without type casting issues
+    let queryBuilder = db
+      .select()
+      .from(evidenceDistributions)
+      .$dynamic();
+
     if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
+      queryBuilder = queryBuilder.where(and(...conditions));
     }
 
-    query = query.orderBy(desc(evidenceDistributions.createdAt)) as any;
+    // Order by dispatchedAt (most recent first), nulls last
+    queryBuilder = queryBuilder.orderBy(desc(evidenceDistributions.dispatchedAt));
 
     if (filters?.limit) {
-      query = query.limit(filters.limit) as any;
+      queryBuilder = queryBuilder.limit(filters.limit);
     }
 
     if (filters?.offset) {
-      query = query.offset(filters.offset) as any;
+      queryBuilder = queryBuilder.offset(filters.offset);
     }
 
-    return await query;
+    return await queryBuilder;
   }
 
   async getOutboundMessages(distributionId?: string, filters?: {

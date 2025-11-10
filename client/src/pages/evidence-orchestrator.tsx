@@ -308,7 +308,8 @@ export default function EvidenceOrchestrator() {
               <TableRow className="bg-gray-50 dark:bg-gray-900">
                 <TableHead className="w-12">
                   <Checkbox
-                    checked={selectedItems.length === filteredDistributions.length && filteredDistributions.length > 0}
+                    checked={filteredDistributions.length > 0 && selectedItems.length === filteredDistributions.length}
+                    disabled={filteredDistributions.length === 0}
                     onCheckedChange={(checked) => {
                       if (checked) {
                         setSelectedItems(filteredDistributions.map(d => d.id));
