@@ -12,6 +12,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**Evidence Orchestrator with Multi-User Collaboration (November 10, 2025)**
+- ✅ Created comprehensive multi-user collaboration schema with role-based access control
+- ✅ Implemented evidence envelope system for tracking evidence lifecycle and version lineage
+- ✅ Built evidence orchestrator service (`server/evidenceOrchestrator.ts`) with event-driven architecture
+- ✅ Added fine-grained permission system with visibility overrides and participant permissions
+- ✅ Created orchestrator routing policy system for mapping evidence to ecosystem targets
+- ✅ Implemented effective permission resolver for client/attorney/shared workspace views
+- ✅ Added database tables: evidence_envelopes, evidence_distributions, evidence_visibility_overrides, evidence_envelope_participants, orchestrator_routing_policy
+- ✅ Encoded all constraints in Drizzle schema with proper uniqueIndex and enum array validation
+- ✅ Added audit logging for evidence orchestration events
+
 **ChittyID Authentication Integration (August 19, 2025)**
 - ✓ Created ChittyAuth service in `server/chittyAuth.ts` with full OIDC integration
 - ✓ Updated schema to support ChittyID users with roles, permissions, and attestations  

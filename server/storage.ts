@@ -15,6 +15,9 @@ import {
   messageParties,
   conversationMessages,
   messageAttachments,
+  evidenceEnvelopes,
+  evidenceDistributions,
+  evidenceEnvelopeParticipants,
   type User,
   type UpsertUser,
   type Case,
@@ -47,6 +50,11 @@ import {
   type InsertConversationMessage,
   type MessageAttachment,
   type InsertMessageAttachment,
+  type EvidenceEnvelope,
+  type InsertEvidenceEnvelope,
+  type EvidenceDistribution,
+  type EvidenceEnvelopeParticipant,
+  type InsertEvidenceEnvelopeParticipant,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, or, like, isNull } from "drizzle-orm";
@@ -164,6 +172,13 @@ export interface IStorage {
   addAttachment(attachmentData: InsertMessageAttachment): Promise<MessageAttachment>;
   listAttachmentsByMessage(messageId: string): Promise<MessageAttachment[]>;
   findAttachmentBySha256(sha256: string): Promise<MessageAttachment | undefined>;
+  
+  // Evidence orchestrator operations
+  createEvidenceEnvelope(envelopeData: InsertEvidenceEnvelope): Promise<EvidenceEnvelope>;
+  getEvidenceEnvelope(id: string): Promise<EvidenceEnvelope | undefined>;
+  getEvidenceEnvelopes(caseId: string): Promise<EvidenceEnvelope[]>;
+  getEvidenceDistributions(envelopeId: string): Promise<EvidenceDistribution[]>;
+  addEvidenceParticipant(participantData: InsertEvidenceEnvelopeParticipant): Promise<EvidenceEnvelopeParticipant>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -906,6 +921,48 @@ export class DatabaseStorage implements IStorage {
       .where(eq(messageAttachments.sha256, sha256))
       .limit(1);
     return attachment;
+  }
+
+  // Evidence orchestrator operations
+  async createEvidenceEnvelope(envelopeData: InsertEvidenceEnvelope): Promise<EvidenceEnvelope> {
+    const [envelope] = await db
+      .insert(evidenceEnvelopes)
+      .values(envelopeData)
+      .returning();
+    return envelope;
+  }
+
+  async getEvidenceEnvelope(id: string): Promise<EvidenceEnvelope | undefined> {
+    const [envelope] = await db
+      .select()
+      .from(evidenceEnvelopes)
+      .where(eq(evidenceEnvelopes.id, id))
+      .limit(1);
+    return envelope;
+  }
+
+  async getEvidenceEnvelopes(caseId: string): Promise<EvidenceEnvelope[]> {
+    return await db
+      .select()
+      .from(evidenceEnvelopes)
+      .where(eq(evidenceEnvelopes.caseId, caseId))
+      .orderBy(desc(evidenceEnvelopes.createdAt));
+  }
+
+  async getEvidenceDistributions(envelopeId: string): Promise<EvidenceDistribution[]> {
+    return await db
+      .select()
+      .from(evidenceDistributions)
+      .where(eq(evidenceDistributions.envelopeId, envelopeId))
+      .orderBy(desc(evidenceDistributions.dispatchedAt));
+  }
+
+  async addEvidenceParticipant(participantData: InsertEvidenceEnvelopeParticipant): Promise<EvidenceEnvelopeParticipant> {
+    const [participant] = await db
+      .insert(evidenceEnvelopeParticipants)
+      .values(participantData)
+      .returning();
+    return participant;
   }
 }
 

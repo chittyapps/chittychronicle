@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   index,
+  uniqueIndex,
   jsonb,
   pgTable,
   timestamp,
@@ -28,6 +29,13 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
+// Enum definitions - Must be defined before tables that use them
+export const userRoleEnum = pgEnum('user_role', ['client', 'attorney', 'admin']);
+export const casePermissionEnum = pgEnum('case_permission', ['owner', 'editor', 'viewer']);
+export const evidenceStatusEnum = pgEnum('evidence_status', ['draft', 'submitted', 'processing', 'verified', 'rejected']);
+export const ecosystemTargetEnum = pgEnum('ecosystem_target', ['chitty_ledger', 'chitty_verify', 'chitty_trust', 'chitty_chain']);
+export const visibilityScopeEnum = pgEnum('visibility_scope_enum', ['client_only', 'shared', 'attorney_only']);
+
 // User storage table for Replit Auth
 export const users = pgTable("users", {
   id: varchar("id").primaryKey(),
@@ -35,6 +43,9 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  role: userRoleEnum("role").default('client'),
+  chittyId: varchar("chitty_id", { length: 255 }).unique(),
+  organizationId: varchar("organization_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -195,6 +206,149 @@ export const chittyPmProjects = pgTable("chitty_pm_projects", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// ========================
+// MULTI-USER COLLABORATION
+// ========================
+
+// Case Collaborators - Junction table for case sharing
+export const caseCollaborators = pgTable("case_collaborators", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  caseId: uuid("case_id").references(() => cases.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  permission: casePermissionEnum("permission").notNull().default('viewer'),
+  isShared: boolean("is_shared").notNull().default(false),
+  invitedBy: varchar("invited_by"),
+  invitedAt: timestamp("invited_at").defaultNow(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
+// Evidence Envelopes - Core evidence tracking system
+export const evidenceEnvelopes = pgTable("evidence_envelopes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  caseId: uuid("case_id").references(() => cases.id, { onDelete: 'cascade' }).notNull(),
+  timelineEntryId: uuid("timeline_entry_id").references(() => timelineEntries.id, { onDelete: 'set null' }),
+  ownerId: varchar("owner_id").references(() => users.id).notNull(),
+  supersedesEnvelopeId: uuid("supersedes_envelope_id").references(() => evidenceEnvelopes.id, { onDelete: 'set null' }),
+  status: evidenceStatusEnum("status").notNull().default('draft'),
+  visibilityScope: visibilityScopeEnum("visibility_scope").notNull().default('shared'),
+  title: text("title").notNull(),
+  description: text("description"),
+  contentHash: varchar("content_hash", { length: 255 }),
+  sourceMetadata: jsonb("source_metadata"),
+  chittyIds: text("chitty_ids").array().default(sql`ARRAY[]::text[]`),
+  version: varchar("version", { length: 20 }).notNull().default('1'),
+  createdBy: varchar("created_by").notNull(),
+  modifiedBy: varchar("modified_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Evidence Distributions - Track downstream ecosystem distribution
+export const evidenceDistributions = pgTable("evidence_distributions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  envelopeId: uuid("envelope_id").references(() => evidenceEnvelopes.id, { onDelete: 'cascade' }).notNull(),
+  target: ecosystemTargetEnum("target").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default('pending'), // pending, dispatched, acknowledged, failed
+  payloadHash: varchar("payload_hash", { length: 255 }),
+  externalId: varchar("external_id", { length: 255 }), // ID from target system (ledger tx, chain block, etc)
+  dispatchedAt: timestamp("dispatched_at"),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  errorLog: text("error_log"),
+  retryCount: varchar("retry_count", { length: 10 }).default('0'),
+  metadata: jsonb("metadata"),
+});
+
+// Evidence Comments - Shared workspace collaboration
+export const evidenceComments = pgTable("evidence_comments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  envelopeId: uuid("envelope_id").references(() => evidenceEnvelopes.id, { onDelete: 'cascade' }).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  visibilityScope: visibilityScopeEnum("visibility_scope").notNull().default('shared'),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Evidence Annotations - Document markup and highlights
+export const evidenceAnnotations = pgTable("evidence_annotations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  envelopeId: uuid("envelope_id").references(() => evidenceEnvelopes.id, { onDelete: 'cascade' }).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  annotationType: varchar("annotation_type", { length: 50 }).notNull(), // highlight, note, question, flag
+  rangeSelector: jsonb("range_selector"), // {start, end, text}
+  content: text("content"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Evidence Approvals - State transition tracking
+export const evidenceApprovals = pgTable("evidence_approvals", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  envelopeId: uuid("envelope_id").references(() => evidenceEnvelopes.id, { onDelete: 'cascade' }).notNull(),
+  requestedBy: varchar("requested_by").references(() => users.id).notNull(),
+  resolvedBy: varchar("resolved_by").references(() => users.id),
+  resolution: varchar("resolution", { length: 50 }), // approved, rejected, revision_requested
+  comments: text("comments"),
+  requestedAt: timestamp("requested_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+// Audit Log - Security and compliance tracking
+export const auditLog = pgTable("audit_log", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  entityType: varchar("entity_type", { length: 100 }).notNull(), // case, evidence_envelope, timeline_entry, etc
+  entityId: varchar("entity_id", { length: 255 }).notNull(),
+  action: varchar("action", { length: 100 }).notNull(), // create, update, delete, view, share, etc
+  actorId: varchar("actor_id").references(() => users.id),
+  actorRole: varchar("actor_role", { length: 50 }),
+  context: jsonb("context"), // Additional contextual data
+  occurredAt: timestamp("occurred_at").defaultNow(),
+});
+
+// Evidence Visibility Overrides - Fine-grained participant access control
+export const evidenceVisibilityOverrides = pgTable("evidence_visibility_overrides", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  envelopeId: uuid("envelope_id").references(() => evidenceEnvelopes.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  canView: boolean("can_view").notNull().default(false),
+  canComment: boolean("can_comment").notNull().default(false),
+  canAnnotate: boolean("can_annotate").notNull().default(false),
+  canApprove: boolean("can_approve").notNull().default(false),
+  grantedBy: varchar("granted_by").references(() => users.id).notNull(),
+  grantedAt: timestamp("granted_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  reason: text("reason"),
+}, (table) => ({
+  uniqueEnvelopeUser: uniqueIndex("ux_visibility_override_unique").on(table.envelopeId, table.userId),
+}));
+
+// Evidence Envelope Participants - Junction table for participant permissions
+export const evidenceEnvelopeParticipants = pgTable("evidence_envelope_participants", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  envelopeId: uuid("envelope_id").references(() => evidenceEnvelopes.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  participantRole: varchar("participant_role", { length: 50 }).notNull(), // reviewer, contributor, observer
+  permissions: text("permissions").array().default(sql`ARRAY[]::text[]`), // view, comment, annotate, approve
+  addedBy: varchar("added_by").references(() => users.id).notNull(),
+  addedAt: timestamp("added_at").defaultNow(),
+}, (table) => ({
+  uniqueEnvelopeParticipant: uniqueIndex("ux_envelope_participant_unique").on(table.envelopeId, table.userId),
+}));
+
+// Orchestrator Routing Policy - Maps visibility/permission to ecosystem targets
+export const orchestratorRoutingPolicy = pgTable("orchestrator_routing_policy", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  visibilityScope: visibilityScopeEnum("visibility_scope").notNull(),
+  casePermission: casePermissionEnum("case_permission").notNull(),
+  evidenceStatus: evidenceStatusEnum("evidence_status").notNull(),
+  allowedTargets: ecosystemTargetEnum("allowed_targets").array().default(sql`ARRAY[]::ecosystem_target[]`),
+  requiresApproval: boolean("requires_approval").notNull().default(false),
+  autoDispatch: boolean("auto_dispatch").notNull().default(false),
+  priority: varchar("priority", { length: 20 }).notNull().default('normal'), // high, normal, low
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const casesRelations = relations(cases, ({ many }) => ({
   timelineEntries: many(timelineEntries),
@@ -293,6 +447,59 @@ export const insertChittyIdUserSchema = createInsertSchema(chittyIdUsers).omit({
 });
 
 export const insertChittyPmProjectSchema = createInsertSchema(chittyPmProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Multi-user collaboration insert schemas
+export const insertCaseCollaboratorSchema = createInsertSchema(caseCollaborators).omit({
+  id: true,
+  invitedAt: true,
+});
+
+export const insertEvidenceEnvelopeSchema = createInsertSchema(evidenceEnvelopes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEvidenceDistributionSchema = createInsertSchema(evidenceDistributions).omit({
+  id: true,
+});
+
+export const insertEvidenceCommentSchema = createInsertSchema(evidenceComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEvidenceAnnotationSchema = createInsertSchema(evidenceAnnotations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEvidenceApprovalSchema = createInsertSchema(evidenceApprovals).omit({
+  id: true,
+  requestedAt: true,
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLog).omit({
+  id: true,
+  occurredAt: true,
+});
+
+export const insertEvidenceVisibilityOverrideSchema = createInsertSchema(evidenceVisibilityOverrides).omit({
+  id: true,
+  grantedAt: true,
+});
+
+export const insertEvidenceEnvelopeParticipantSchema = createInsertSchema(evidenceEnvelopeParticipants).omit({
+  id: true,
+  addedAt: true,
+});
+
+export const insertOrchestratorRoutingPolicySchema = createInsertSchema(orchestratorRoutingPolicy).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -547,3 +754,25 @@ export type ConversationMessage = typeof conversationMessages.$inferSelect;
 export type InsertConversationMessage = z.infer<typeof insertConversationMessageSchema>;
 export type MessageAttachment = typeof messageAttachments.$inferSelect;
 export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSchema>;
+
+// Multi-user collaboration types
+export type CaseCollaborator = typeof caseCollaborators.$inferSelect;
+export type InsertCaseCollaborator = z.infer<typeof insertCaseCollaboratorSchema>;
+export type EvidenceEnvelope = typeof evidenceEnvelopes.$inferSelect;
+export type InsertEvidenceEnvelope = z.infer<typeof insertEvidenceEnvelopeSchema>;
+export type EvidenceDistribution = typeof evidenceDistributions.$inferSelect;
+export type InsertEvidenceDistribution = z.infer<typeof insertEvidenceDistributionSchema>;
+export type EvidenceComment = typeof evidenceComments.$inferSelect;
+export type InsertEvidenceComment = z.infer<typeof insertEvidenceCommentSchema>;
+export type EvidenceAnnotation = typeof evidenceAnnotations.$inferSelect;
+export type InsertEvidenceAnnotation = z.infer<typeof insertEvidenceAnnotationSchema>;
+export type EvidenceApproval = typeof evidenceApprovals.$inferSelect;
+export type InsertEvidenceApproval = z.infer<typeof insertEvidenceApprovalSchema>;
+export type AuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type EvidenceVisibilityOverride = typeof evidenceVisibilityOverrides.$inferSelect;
+export type InsertEvidenceVisibilityOverride = z.infer<typeof insertEvidenceVisibilityOverrideSchema>;
+export type EvidenceEnvelopeParticipant = typeof evidenceEnvelopeParticipants.$inferSelect;
+export type InsertEvidenceEnvelopeParticipant = z.infer<typeof insertEvidenceEnvelopeParticipantSchema>;
+export type OrchestratorRoutingPolicy = typeof orchestratorRoutingPolicy.$inferSelect;
+export type InsertOrchestratorRoutingPolicy = z.infer<typeof insertOrchestratorRoutingPolicySchema>;

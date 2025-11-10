@@ -1097,6 +1097,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Evidence Orchestrator Routes
+  const { evidenceOrchestrator } = await import('./evidenceOrchestrator');
+
+  // Create evidence envelope
+  app.post('/api/evidence/envelopes', async (req: any, res) => {
+    try {
+      const userId = req.user?.id || 'anonymous';
+      const envelope = await storage.createEvidenceEnvelope({
+        ...req.body,
+        createdBy: userId,
+        modifiedBy: userId,
+      });
+      res.json(envelope);
+    } catch (error) {
+      console.error("Error creating evidence envelope:", error);
+      res.status(500).json({ message: "Failed to create evidence envelope" });
+    }
+  });
+
+  // List evidence envelopes for a case
+  app.get('/api/evidence/envelopes', async (req: any, res) => {
+    try {
+      const caseId = req.query.caseId;
+      if (!caseId) {
+        return res.status(400).json({ message: "caseId is required" });
+      }
+      const envelopes = await storage.getEvidenceEnvelopes(caseId);
+      res.json(envelopes);
+    } catch (error) {
+      console.error("Error fetching evidence envelopes:", error);
+      res.status(500).json({ message: "Failed to fetch evidence envelopes" });
+    }
+  });
+
+  // Get evidence envelope by ID
+  app.get('/api/evidence/envelopes/:id', async (req: any, res) => {
+    try {
+      const envelope = await storage.getEvidenceEnvelope(req.params.id);
+      if (!envelope) {
+        return res.status(404).json({ message: "Evidence envelope not found" });
+      }
+      res.json(envelope);
+    } catch (error) {
+      console.error("Error fetching evidence envelope:", error);
+      res.status(500).json({ message: "Failed to fetch evidence envelope" });
+    }
+  });
+
+  // Dispatch evidence to ecosystem targets
+  app.post('/api/evidence/envelopes/:id/dispatch', async (req: any, res) => {
+    try {
+      const userId = req.user?.id || 'anonymous';
+      await evidenceOrchestrator.dispatchEvidence(req.params.id, userId);
+      res.json({ success: true, message: "Evidence dispatch initiated" });
+    } catch (error) {
+      console.error("Error dispatching evidence:", error);
+      res.status(500).json({ message: "Failed to dispatch evidence" });
+    }
+  });
+
+  // Get evidence distributions for an envelope
+  app.get('/api/evidence/envelopes/:id/distributions', async (req: any, res) => {
+    try {
+      const distributions = await storage.getEvidenceDistributions(req.params.id);
+      res.json(distributions);
+    } catch (error) {
+      console.error("Error fetching evidence distributions:", error);
+      res.status(500).json({ message: "Failed to fetch evidence distributions" });
+    }
+  });
+
+  // Get effective permissions for an envelope
+  app.get('/api/evidence/envelopes/:id/permissions', async (req: any, res) => {
+    try {
+      const userId = req.user?.id || 'anonymous';
+      const permissions = await evidenceOrchestrator.resolveEffectivePermissions(
+        req.params.id,
+        userId
+      );
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error resolving permissions:", error);
+      res.status(500).json({ message: "Failed to resolve permissions" });
+    }
+  });
+
+  // Add participant to evidence envelope
+  app.post('/api/evidence/envelopes/:id/participants', async (req: any, res) => {
+    try {
+      const userId = req.user?.id || 'anonymous';
+      const participant = await storage.addEvidenceParticipant({
+        envelopeId: req.params.id,
+        ...req.body,
+        addedBy: userId,
+      });
+      res.json(participant);
+    } catch (error) {
+      console.error("Error adding participant:", error);
+      res.status(500).json({ message: "Failed to add participant" });
+    }
+  });
+
+  // Process pending distributions (admin/background task)
+  app.post('/api/evidence/process-pending', async (req: any, res) => {
+    try {
+      await evidenceOrchestrator.processPendingDistributions();
+      res.json({ success: true, message: "Pending distributions processed" });
+    } catch (error) {
+      console.error("Error processing pending distributions:", error);
+      res.status(500).json({ message: "Failed to process pending distributions" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
