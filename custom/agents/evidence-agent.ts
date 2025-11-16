@@ -14,7 +14,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import yaml from 'js-yaml';
-import Anthropic from '@anthropic-ai/sdk';
+import { createAIClient } from '../lib/cloudflare-ai';
 import crypto from 'crypto';
 import type { MarieKondoImporter } from '../importers/marie-kondo-evidence-importer';
 
@@ -57,26 +57,28 @@ interface ChittyChainEvent {
  */
 export class EvidenceAgent {
   private config: any;
-  private anthropic: Anthropic;
+  private ai: any;
   private importer: any;
   private startTime: number;
   private processedCount: number = 0;
   private errorCount: number = 0;
   private processingQueue: Set<string> = new Set();
 
-  constructor(configPath: string = 'config/aribia-litigation.yaml') {
+  constructor(configPath: string = 'config/aribia-litigation.yaml', cloudflareAI?: any) {
     // Load configuration
     const configFile = readFileSync(join(process.cwd(), configPath), 'utf8');
     this.config = yaml.load(configFile) as any;
 
-    // Initialize Anthropic client
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || ''
+    // Initialize AI client (Cloudflare AI or Anthropic)
+    this.ai = createAIClient({
+      cloudflareAI,
+      preferCloudflare: true
     });
 
     this.startTime = Date.now();
 
     console.log('[EvidenceAgent] Initialized with config:', this.config.service.name);
+    console.log('[EvidenceAgent] AI Provider:', cloudflareAI ? 'Cloudflare Workers AI' : 'Anthropic/Demo');
   }
 
   /**
@@ -316,7 +318,7 @@ export class EvidenceAgent {
    */
   private async ai_categorize(metadata: any): Promise<string> {
     try {
-      const message = await this.anthropic.messages.create({
+      const message = await this.ai.messages.create({
         model: this.config.agents.evidence_processor.ai_model.model,
         max_tokens: 1000,
         temperature: this.config.agents.evidence_processor.ai_model.temperature,

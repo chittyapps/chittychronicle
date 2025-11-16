@@ -12,7 +12,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import yaml from 'js-yaml';
-import Anthropic from '@anthropic-ai/sdk';
+import { createAIClient } from '../lib/cloudflare-ai';
 
 interface Deadline {
   id: string;
@@ -53,7 +53,7 @@ interface GeneratedDocument {
  */
 export class LitigationAgent {
   private config: any;
-  private anthropic: Anthropic;
+  private ai: any;
   private deadlines: Map<string, Deadline> = new Map();
   private startTime: number;
 
@@ -63,8 +63,8 @@ export class LitigationAgent {
     this.config = yaml.load(configFile) as any;
 
     // Initialize Anthropic client
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || ''
+    this.ai = createAIClient({
+      preferCloudflare: true
     });
 
     this.startTime = Date.now();
@@ -190,7 +190,7 @@ The motion should include:
 Use formal legal language and cite Illinois Supreme Court Rule 137.
 Include specific dates, document references, and contradictions.`;
 
-    const message = await this.anthropic.messages.create({
+    const message = await this.ai.messages.create({
       model: this.config.ai.models.document_generation.model,
       max_tokens: this.config.ai.models.document_generation.max_tokens,
       temperature: this.config.ai.models.document_generation.temperature,
@@ -249,7 +249,7 @@ The response should include:
 Use formal legal language appropriate for Illinois family court.
 Include specific document references and evidence citations.`;
 
-    const message = await this.anthropic.messages.create({
+    const message = await this.ai.messages.create({
       model: this.config.ai.models.document_generation.model,
       max_tokens: this.config.ai.models.document_generation.max_tokens,
       temperature: this.config.ai.models.document_generation.temperature,
@@ -301,7 +301,7 @@ The petition should include:
 
 Use formal legal language and cite specific order provisions violated.`;
 
-    const message = await this.anthropic.messages.create({
+    const message = await this.ai.messages.create({
       model: this.config.ai.models.document_generation.model,
       max_tokens: this.config.ai.models.document_generation.max_tokens,
       temperature: this.config.ai.models.document_generation.temperature,

@@ -13,7 +13,7 @@
 import { promises as fs } from 'fs';
 import { join, extname, basename } from 'path';
 import crypto from 'crypto';
-import Anthropic from '@anthropic-ai/sdk';
+import { createAIClient } from '../lib/cloudflare-ai';
 
 interface EvidenceFile {
   path: string;
@@ -51,15 +51,15 @@ interface OrganizeOptions {
  */
 export class MarieKondoImporter {
   private config: any;
-  private anthropic: Anthropic;
+  private ai: any;
   private fileHashes: Map<string, string[]> = new Map();
   private categories: Map<string, string[]> = new Map();
 
   constructor(config: any) {
     this.config = config;
 
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || ''
+    this.ai = createAIClient({
+      preferCloudflare: true
     });
 
     console.log('[MarieKondo] Initialized evidence organizer');
@@ -263,7 +263,7 @@ Size: ${file.size} bytes
 Path: ${file.path}
 `;
 
-      const message = await this.anthropic.messages.create({
+      const message = await this.ai.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 500,
         temperature: 0.1,

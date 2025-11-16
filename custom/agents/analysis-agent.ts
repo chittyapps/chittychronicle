@@ -13,7 +13,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import yaml from 'js-yaml';
-import Anthropic from '@anthropic-ai/sdk';
+import { createAIClient } from '../lib/cloudflare-ai';
 
 interface ContradictionResult {
   id: string;
@@ -54,7 +54,7 @@ interface AnalysisResult {
  */
 export class AnalysisAgent {
   private config: any;
-  private anthropic: Anthropic;
+  private ai: any;
   private analysisCache: Map<string, AnalysisResult> = new Map();
   private startTime: number;
 
@@ -64,8 +64,8 @@ export class AnalysisAgent {
     this.config = yaml.load(configFile) as any;
 
     // Initialize Anthropic client
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || ''
+    this.ai = createAIClient({
+      preferCloudflare: true
     });
 
     this.startTime = Date.now();
@@ -155,7 +155,7 @@ export class AnalysisAgent {
       // TODO: Fetch actual evidence from database
       const evidenceData = await this.fetch_evidence(evidence_ids);
 
-      const message = await this.anthropic.messages.create({
+      const message = await this.ai.messages.create({
         model: this.config.agents.contradiction_analyzer.ai_model.model,
         max_tokens: this.config.agents.contradiction_analyzer.ai_model.max_tokens,
         temperature: this.config.agents.contradiction_analyzer.ai_model.temperature,
